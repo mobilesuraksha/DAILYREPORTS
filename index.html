@@ -1,0 +1,2913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Sales & Ledger Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* General Styles */
+        body { font-family: 'Poppins', sans-serif; margin: 0; padding: 0; background-color: #f0f2f5; color: #333; }
+        .container { max-width: 1300px; margin: 30px auto; padding: 30px; background-color: #ffffff; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1); border-radius: 12px; }
+        h1 { color: #007bff; font-weight: 700; border-bottom: 3px solid #007bff; padding-bottom: 10px; margin-bottom: 20px; }
+        h2 { color: #333; font-weight: 600; margin-top: 0; margin-bottom: 15px; }
+
+        /* SECURITY OVERLAY STYLES */
+        #securityOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #333;
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            width: 300px;
+        }
+        .login-box h2 { color: #007bff; margin-bottom: 20px; }
+        .login-box input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .login-box button {
+            width: 100%;
+            padding: 12px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .login-box button:hover { background-color: #218838; }
+        .error-msg { color: red; margin-top: 10px; display: none; }
+
+
+        /* Tab Menu */
+        .tab-menu { display: flex; margin-bottom: 20px; border-bottom: 1px solid #ddd; flex-wrap: wrap; }
+        .tab-menu button {
+            background-color: transparent;
+            color: #555;
+            padding: 12px 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-menu button:hover { color: #007bff; }
+        .tab-menu button.active {
+            color: #007bff;
+            border-bottom: 3px solid #007bff;
+        }
+        .tab-content { padding-top: 20px; }
+
+        /* Form and Input Styling */
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: #444; }
+        .form-group input:not([type="checkbox"]), .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+            background-color: #f9f9f9;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.2);
+            background-color: #fff;
+        }
+
+        /* Calculated Fields */
+        #totalAmount, #balanceShow {
+            background-color: #e6f7ff !important;
+            font-weight: 700;
+            color: #0056b3;
+        }
+        #balanceShow {
+            background-color: #fff3e0 !important;
+            color: #ff9800;
+        }
+
+        /* Button Styling */
+        .btn-submit { background-color: #28a745; color: white; padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 600; transition: background-color 0.3s, transform 0.2s; }
+        .btn-submit:hover { background-color: #1e873a; transform: translateY(-1px); }
+        .btn-action { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; color: white; font-size: 13px; margin: 2px; transition: background-color 0.3s; }
+        .btn-edit { background-color: #ffc107; color: #333; }
+        .btn-delete { background-color: #dc3545; }
+        .btn-ledger { background-color: #17a2b8; }
+        .btn-view-items { background-color: #6f42c1; } 
+        .btn-export, .btn-print-action { padding: 10px 18px; border-radius: 6px; font-weight: 500; }
+        .btn-export { background-color: #6c757d; }
+        .btn-export:hover { background-color: #5a6268; }
+        .btn-print-action { background-color: #007bff; }
+        .btn-print-action:hover { background-color: #0056b3; }
+        .btn-delivery { background-color: #ff9800; color: #333; font-weight: 600;}
+
+
+        /* Multi-Box Section */
+        #boxDetailsContainer { border: 1px dashed #b3e5fc; padding: 15px; margin-bottom: 20px; border-radius: 8px; background-color: #f7fcff; }
+        .box-item { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 15px; 
+            margin-bottom: 10px; 
+            padding: 15px; 
+            border: 1px solid #e0f7fa; 
+            border-radius: 6px; 
+            background-color: #fff; 
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); 
+        }
+        .box-item .box-number {
+            flex: 0 0 30px; 
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #007bff;
+            align-self: center;
+        }
+        .box-item > div { flex: 1 1 180px; }
+        .box-item label { font-size: 12px; color: #666; font-weight: 400; }
+        .box-item button { flex: 0 0 auto; background-color: #e53935; border-radius: 6px; align-self: center; height: 42px; margin-top: 15px; }
+        #addBoxButton { background-color: #ff9800; padding: 10px 15px; border-radius: 6px; font-weight: 600; }
+
+        /* Reports Table */
+        .data-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 15px; 
+            background-color: #fff;
+            table-layout: fixed; 
+        }
+        .data-table th, .data-table td { 
+            border: 1px solid #eee; 
+            padding: 12px; 
+            text-align: left; 
+            word-wrap: break-word; 
+        }
+        .data-table th { 
+            background-color: #e9ecef; 
+            color: #333; 
+            font-weight: 600; 
+            white-space: normal; 
+        }
+        .reports-container { overflow-x: auto; }
+        
+        /* Table Layout Fixes */
+        #todayOrdersTable th:nth-child(1) { width: 8%; }  
+        #todayOrdersTable th:nth-child(2) { width: 6%; }  
+        #todayOrdersTable th:nth-child(3) { width: 12%; } 
+        #todayOrdersTable th:nth-child(4) { width: 25%; } 
+        #todayOrdersTable th:nth-child(5) { width: 10%; } 
+        #todayOrdersTable th:nth-child(6) { width: 10%; } 
+        #todayOrdersTable th:nth-child(7) { width: 10%; } 
+        #todayOrdersTable th:nth-child(8) { width: 19%; } 
+        
+        /* Expense Table Layout */
+        #todayExpensesTable th:nth-child(1) { width: 15%; }
+        #todayExpensesTable th:nth-child(2) { width: 45%; }
+        #todayExpensesTable th:nth-child(3) { width: 20%; }
+        #todayExpensesTable th:nth-child(4) { width: 20%; }
+
+
+        /* --- START: COLOR STYLES FOR REPORTS --- */
+        
+        /* 1. Total Amount (Blue) - Order Amount / Debit */
+        #todayOrdersTable td:nth-child(5),
+        #duePaymentsTable td:nth-child(3),
+        #allOrdersTable td:nth-child(3),
+        #reportsTable td:nth-child(4),
+        #ledgerTable td:nth-child(3) 
+         {
+            font-weight: 700;
+            color: #007bff; /* Primary Blue */
+        }
+
+        /* 2. Total Paid (Green) */
+        #todayOrdersTable td:nth-child(6),
+        #duePaymentsTable td:nth-child(4),
+        #allOrdersTable td:nth-child(4),
+        #reportsTable td:nth-child(5)
+         {
+            font-weight: 700;
+            color: #28a745; /* Success Green */
+        }
+
+        /* 3. Balance Due (Red) */
+        #todayOrdersTable td:nth-child(7),
+        #duePaymentsTable td:nth-child(5),
+        #allOrdersTable td:nth-child(5),
+        #reportsTable td:nth-child(6)
+         {
+            font-weight: 700;
+            color: #dc3545; /* Danger Red */
+            background-color: #fff3f4; 
+        }
+
+        /* 4. Payment History (Mode Colors) */
+        .payment-history-list strong.payment-mode-cash,
+        #ledgerTable td:nth-child(4) .payment-mode-cash { font-weight: 700; color: #8A2BE2; } /* Cash: Blue Violet */
+        .payment-history-list strong.payment-mode-upi,
+        #ledgerTable td:nth-child(4) .payment-mode-upi { font-weight: 700; color: #17a2b8; } /* UPI: Cyan/Teal */
+        .payment-history-list strong.payment-mode-card,
+        #ledgerTable td:nth-child(4) .payment-mode-card { font-weight: 700; color: #ff9800; } /* Card: Orange */
+        .payment-history-list strong.payment-mode-bank,
+        .payment-history-list strong.payment-mode-cheque,
+        .payment-history-list strong.payment-mode-counter-pay,
+        #ledgerTable td:nth-child(4) .payment-mode-bank,
+        #ledgerTable td:nth-child(4) .payment-mode-cheque,
+        #ledgerTable td:nth-child(4) .payment-mode-counter-pay { font-weight: 700; color: #00796b; } /* Dark Teal */
+        
+        /* 5. Delivered/Remaining Status */
+        .remaining-text { color: #dc3545; font-weight: 600; }
+        .delivered-text { color: #28a745; font-weight: 600; }
+        /* --- END: COLOR STYLES FOR REPORTS --- */
+
+
+        /* Modal Styles */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.4); 
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto; 
+            padding: 30px;
+            border: 1px solid #888;
+            width: 80%; 
+            max-width: 900px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        /* Ledger Layout and Table Fixes */
+        .ledger-summary-fixed {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 30px; 
+            margin-bottom: 15px;
+            font-weight: 600;
+            color: #333;
+        }
+        .ledger-summary-fixed .ledger-summary-item {
+            font-size: 1.1em;
+            margin: 0; 
+        }
+        .ledger-summary-fixed .ledger-summary-item span {
+            color: #007bff; 
+            font-weight: 700; 
+            margin-right: 0; 
+        }
+
+        /* Order Details Table inside Ledger Modal */
+        #orderDetailsTable { 
+            width: 100%; 
+            margin-top: 10px; 
+            margin-bottom: 20px; 
+            border-collapse: collapse; 
+            font-size: 13px; 
+            table-layout: fixed; 
+        }
+        #orderDetailsTable th, #orderDetailsTable td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        #orderDetailsTable th { background-color: #f0f8ff; color: #007bff; font-weight: 600; }
+        /* Column Widths for Item Details Table */
+        #orderDetailsTable th:nth-child(1) { width: 5%; }  
+        #orderDetailsTable th:nth-child(2) { width: 20%; } 
+        #orderDetailsTable th:nth-child(3) { width: 8%; } 
+        #orderDetailsTable th:nth-child(4) { width: 8%; } 
+        #orderDetailsTable th:nth-child(5) { width: 8%; } 
+        #orderDetailsTable th:nth-child(6) { width: 8%; } 
+        #orderDetailsTable th:nth-child(7) { width: 8%; } 
+        #orderDetailsTable th:nth-child(8) { width: 35%; } /* Delivery Action Cell */
+        
+        /* Delivery Action cell inputs/button */
+        #orderDetailsTable td:nth-child(8) input[type="date"],
+        #orderDetailsTable td:nth-child(8) input[type="number"] {
+            padding: 4px;
+            width: 100%;
+            margin-bottom: 5px;
+            display: block;
+        }
+        #orderDetailsTable td:nth-child(8) button {
+            width: 100%;
+            margin-top: 5px;
+        }
+
+
+        
+        /* Transaction History Table Column Widths and Layout */
+        #ledgerTable { table-layout: fixed; } 
+        #ledgerTable th:nth-child(1) { width: 20%; } 
+        #ledgerTable th:nth-child(2) { width: 30%; } 
+        #ledgerTable th:nth-child(3) { width: 12%; } 
+        #ledgerTable th:nth-child(4) { width: 15%; } 
+        #ledgerTable th:nth-child(5) { width: 13%; } 
+        #ledgerTable th:nth-child(6) { width: 10%; } 
+        
+        /* Add word-break/wrap to all table cells inside the modal */
+        #orderDetailsTable td, #ledgerTable td { 
+            word-break: break-word; 
+            word-wrap: break-word; 
+        }
+
+
+        /* Reports Summary Box */
+        .summary-box { 
+            display: flex; 
+            gap: 15px; 
+            padding: 15px; 
+            margin-bottom: 20px; 
+            border-radius: 8px; 
+            background-color: #e3f2fd; 
+            border: 1px solid #bbdefb;
+            flex-wrap: wrap;
+        }
+        .summary-item {
+            flex: 1 1 180px; 
+            padding: 10px 15px;
+            background-color: #ffffff;
+            border-radius: 6px;
+            box-shadow: 0 2-3px 5px rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+            border-left: 5px solid;
+        }
+        .summary-item .label {
+            font-size: 14px;
+            color: #555;
+            font-weight: 500;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .summary-item .value {
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+        
+        /* Color overrides for general reports summary items (Kitna Hua, Kitna Diya, Kitna Bachs) */
+        #reportsTotalOrderValue { border-left-color: #007bff; }
+        #reportsTotalOrderValue .value { color: #007bff; }
+
+        #reportsTotalCollected { border-left-color: #28a745; }
+        #reportsTotalCollected .value { color: #28a745; }
+
+        #reportsTotalDue { border-left-color: #dc3545; }
+        #reportsTotalDue .value { color: #dc3545; }
+        
+        /* --- START: COLOR STYLES FOR TODAY SUMMARY --- */
+        #todayTotalCashSum { border-left-color: #8A2BE2; } /* Cash: Blue Violet */
+        #todayTotalCashSum .value { color: #8A2BE2; }
+
+        #todayTotalUPISum { border-left-color: #17a2b8; } /* UPI: Cyan/Teal */
+        #todayTotalUPISum .value { color: #17a2b8; }
+
+        #todayTotalCardSum { border-left-color: #ff9800; } /* Card: Orange */
+        #todayTotalCardSum .value { color: #ff9800; }
+
+        #todayTotalOtherElectronicSum { border-left-color: #00796b; } /* Other: Dark Teal */
+        #todayTotalOtherElectronicSum .value { color: #00796b; }
+
+        #todayTotalCreditSum { border-left-color: #dc3545; } /* Total Balance Due: Red */
+        #todayTotalCreditSum .value { color: #dc3545; }
+        
+        /* NEW EXPENSE COLOR */
+        #todayTotalExpensesSum { border-left-color: #6c757d; } /* Grey */
+        #todayTotalExpensesSum .value { color: #6c757d; }
+
+        /* Update NET TOTAL to a prominent color like primary blue */
+        #todayGrossTotalAdvance { border-left-color: #007bff !important; } /* Gross Total Collection: Blue */
+        #todayGrossTotalAdvance .value { color: #007bff !important; }
+        /* --- END: COLOR STYLES FOR TODAY SUMMARY --- */
+        
+        /* Styling for the item list placeholder in Reports */
+        .order-item-list {
+            list-style: none;
+            padding: 0;
+            margin: 5px 0 0 0;
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+            border-top: 1px dashed #eee;
+            padding-top: 5px;
+        }
+        .order-item-list li {
+            margin: 0;
+            padding: 0;
+            white-space: normal; 
+        }
+        
+        /* New style for payments list in the table */
+        .payment-history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 11px;
+            line-height: 1.3;
+        }
+        .payment-history-list li {
+            margin-bottom: 3px;
+            padding: 2px 0;
+            border-bottom: 1px dotted #ccc;
+        }
+        .payment-history-list li:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        /* --- PRINT FIXES AND PORTRAIT MODE --- */
+        @media print {
+            @page { 
+                size: A4 portrait; 
+                margin: 10mm; 
+            } 
+            
+            body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            /* Hide Security Overlay on Print */
+            #securityOverlay { display: none !important; }
+
+            /* 2. Hide UI Elements */
+            .container > :not(.tab-content), 
+            .tab-content > .filter-controls,
+            .tab-content > .export-buttons,
+            .tab-content > p,
+            .reports-container > p,
+            .btn-action, .btn-submit,
+            .modal,
+            #allOrdersTable th:last-child, #allOrdersTable td:last-child { 
+                display: none !important; 
+            }
+            
+            /* Customer Ledger Print Fix */
+            #reports h2, #customerLedgerTab h2, #todaySummary h2 {
+                display: none !important;
+            }
+            
+            /* Apply custom title for Reports */
+            #reports::before, #customerLedgerTab::before {
+                content: "LEDGER / FILTERED REPORT";
+                display: block;
+                font-size: 20px; 
+                font-weight: 700;
+                color: #000;
+                margin-bottom: 10px;
+                padding-bottom: 3px;
+                border-bottom: 3px solid #000;
+            }
+            
+             /* Apply custom title for Today Summary */
+            #todaySummary::before {
+                content: "TODAY'S PAYMENT COLLECTION & EXPENSE SUMMARY";
+                display: block;
+                font-size: 20px; 
+                font-weight: 700;
+                color: #000;
+                margin-bottom: 10px;
+                padding-bottom: 3px;
+                border-bottom: 3px solid #000;
+            }
+            
+            /* 4. Table Styles */
+            .data-table, .reports-print-table, #orderDetailsTable, #consolidatedLedgerTable { 
+                width: 100% !important; 
+                border-collapse: collapse !important; 
+                margin-top: 10px; 
+                font-size: 10px; 
+                table-layout: fixed; 
+            }
+            
+            .data-table th, .data-table td, 
+            .reports-print-table th, .reports-print-table td,
+            #orderDetailsTable th, #orderDetailsTable td,
+            #consolidatedLedgerTable th, #consolidatedLedgerTable td { 
+                border: 1px solid #000 !important; 
+                padding: 3px 5px !important; 
+                text-align: left; 
+                line-height: 1.2;
+                word-wrap: break-word; 
+            }
+            
+            .data-table th, .reports-print-table th, #orderDetailsTable th, #consolidatedLedgerTable th { 
+                background-color: #e9ecef !important; 
+                font-weight: 700;
+            }
+            
+            /* 5. Summary Box Styles */
+            .summary-box { 
+                display: flex; gap: 5px; margin-bottom: 10px; border: 1px solid #bbdefb; padding: 5px; flex-wrap: wrap; 
+            }
+            .summary-item { 
+                flex: 1 1 150px; padding: 5px; border: 1px solid #ccc; background-color: #ffffff; border-left-width: 3px !important;
+            }
+            .summary-item .label { font-size: 9px; color: #555; display: block; }
+            .summary-item .value { font-size: 1.0em; font-weight: 700; color: #000 !important; }
+            
+            /* Apply color styles to table columns in print mode to match screen */
+            #reportsTable td:nth-child(4), #todayOrdersTable td:nth-child(5) { color: #007bff !important; } 
+            #reportsTable td:nth-child(5), #todayOrdersTable td:nth-child(6) { color: #28a745 !important; } 
+            #reportsTable td:nth-child(6), #todayOrdersTable td:nth-child(7) { color: #dc3545 !important; background-color: #fff3f4 !important; } 
+            
+            .remaining-text { color: #dc3545 !important; }
+            .delivered-text { color: #28a745 !important; }
+            
+             /* Ledger Modal Print Fix */
+            .modal-content {
+                width: 100% !important;
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+                border: none;
+            }
+            .close, #newPaymentSection, #ledgerPrintButton { display: none !important; } 
+            
+            #orderDetailsTable th:nth-child(8), #orderDetailsTable td:nth-child(8) { display: none !important; } /* Hide Actions in Item Details */
+
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container { margin: 10px; padding: 15px; }
+            .box-item { flex-direction: column; }
+            .tab-menu { flex-wrap: wrap; }
+            .tab-menu button { flex: 1 1 100%; margin-bottom: 5px; }
+            .summary-box { flex-direction: column; }
+            .summary-item { flex: 1 1 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="securityOverlay">
+        <div class="login-box">
+            <h2>System Locked</h2>
+            <p>Please enter password to access.</p>
+            <input type="password" id="sysPassword" placeholder="Enter Password" onkeyup="if(event.key === 'Enter') unlockSystem()">
+            <button onclick="unlockSystem()">Login</button>
+            <p class="error-msg" id="loginError">Incorrect Password</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>Sales & Order Management System</h1>
+
+        <div class="tab-menu">
+            <button class="tab-button active" onclick="openTab('addOrder', this)">New Order</button>
+            <button class="tab-button" onclick="openTab('todaySummary', this)">Today's Summary</button> 
+            <button class="tab-button" onclick="openTab('duePaymentsList', this)">Due Payments</button> 
+            <button class="tab-button" onclick="openTab('allOrdersList', this)">All Orders List</button> 
+            <button class="tab-button" onclick="openTab('reports', this)">Reports & Filters</button>
+            <button class="tab-button" onclick="openTab('customerLedgerTab', this)">Customer Ledger</button>
+            <button class="tab-button" onclick="openTab('expenseManagement', this)">Expenses & Management</button>
+        </div>
+
+        <div id="addOrder" class="tab-content">
+            <h2>New Order Entry</h2>
+            <form id="orderForm">
+                <input type="hidden" id="orderId" value="">
+
+                <div style="display: flex; gap: 20px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="orderNo">Order No. (Required)</label>
+                        <input type="text" id="orderNo" required>
+                    </div>
+                     <div class="form-group" style="flex: 1;">
+                        <label for="orderDate">Order Date (Required)</label>
+                        <input type="date" id="orderDate" required>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 20px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="deliveryDate">Delivery Date (Required)</label>
+                        <input type="date" id="deliveryDate" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="deliveryTime">Delivery Time (Optional)</label>
+                        <input type="time" id="deliveryTime">
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 20px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="customerName">Customer Name (Required)</label>
+                        <input type="text" id="customerName" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="mobile">Mobile Number (Optional)</label>
+                        <input type="tel" id="mobile"> 
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="orderType">Order Type (Required)</label>
+                    <select id="orderType" required>
+                        <option value="REGULAR">REGULAR</option>
+                        <option value="DIWALI">DIWALI</option>
+                        <option value="BHAJI">BHAJI</option>
+                        <option value="SNACKS">SNACKS</option>
+                        <option value="GIFT">GIFT</option>
+                        <option value="MIX BOX">MIX BOX</option>
+                        <option value="LALA JI">LALA JI</option>
+                        <option value="ROHIT SIR">ROHIT SIR</option>
+                        <option value="Urgent">Urgent Order (Standard)</option>
+                        <option value="Custom">Custom/Special</option>
+                    </select>
+                </div>
+
+                <h3>📦 Item/Box Details (Total Quantity Ordered)</h3>
+                <div id="boxDetailsContainer">
+                    </div>
+                <button type="button" id="addBoxButton" class="btn-action" onclick="addBoxItem()">+ Add Item/Box</button>
+                <hr style="margin: 20px 0; border-top: 1px solid #eee;">
+
+                <div style="display: flex; gap: 20px; align-items: flex-end;">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="totalAmount">Total Order Amount (Auto Calculated)</label>
+                        <input type="number" id="totalAmount" step="0.01" min="0" readonly>
+                    </div>
+                    
+                    <div style="flex: 2; display: flex; gap: 20px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="initialPaymentDate">Initial Payment Date</label>
+                            <input type="date" id="initialPaymentDate">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="advancePayment">Initial Advance Payment (Paid)</label>
+                            <input type="number" id="advancePayment" step="0.01" min="0" value="0" required>
+                        </div>
+                        
+                        <div class="form-group" style="flex: 1;">
+                            <label for="paymentMode">Initial Payment Mode</label>
+                            <select id="paymentMode" required>
+                                <option value="Cash">Cash</option>
+                                <option value="UPI">UPI</option>
+                                <option value="Card">Card</option>
+                                <option value="Bank NEFT">Bank NEFT</option>
+                                <option value="Cheque">Cheque</option>
+                                <option value="Credit">Credit</option>
+                                <option value="Counter Pay">Counter Pay</option>
+                            </select>
+                        </div>
+                    </div>
+                    </div>
+
+                <div class="form-group">
+                    <label for="balanceShow">Balance Due (Initial)</label>
+                    <input type="number" id="balanceShow" step="0.01" min="0" readonly>
+                </div>
+
+                <button type="submit" class="btn-submit">Save Order</button>
+            </form>
+        </div>
+        
+        <div id="todaySummary" class="tab-content" style="display:none;">
+            <h2 id="todayTitle">Today's Sales Summary (Orders with Today's Payment)</h2>
+            
+            <div class="filter-controls" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                 <select id="filterTodayOrderType" onchange="renderTodaySummary()">
+                    <option value="">-- Filter by Order Type --</option>
+                </select>
+            </div>
+
+             <div class="summary-box">
+                <div class="summary-item" id="todayTotalCashSum">
+                    <span class="label">Net Today's Cash Flow (Cash)</span>
+                    <span class="value">₹0.00</span>
+                </div>
+                <div class="summary-item" id="todayTotalUPISum">
+                    <span class="label">Net Today's UPI Flow</span>
+                    <span class="value">₹0.00</span
+                ></div>
+                <div class="summary-item" id="todayTotalCardSum">
+                    <span class="label">Net Today's Card Flow</span>
+                    <span class="value">₹0.00</span>
+                </div>
+                <div class="summary-item" id="todayTotalOtherElectronicSum">
+                    <span class="label">Net Today's Bank/Other Flow</span>
+                    <span class="value">₹0.00</span>
+                </div>
+                
+                <div class="summary-item" id="todayTotalExpensesSum" style="border-left-color: #6c757d;">
+                    <span class="label">Total Expenses Today (Deduction)</span>
+                    <span class="value">₹0.00</span>
+                </div>
+                <div class="summary-item" id="todayGrossTotalAdvance">
+                    <span class="label">Net Today's Cash Flow (Collection - Expenses)</span>
+                    <span class="value">₹0.00</span>
+                </div>
+            </div>
+
+            <div class="export-buttons" style="margin-bottom: 20px; display: flex; gap: 10px;">
+                <button onclick="printTodaySummary()" class="btn-action btn-print-action">Print Today's Report (Portrait)</button>
+            </div>
+
+            <div class="reports-container">
+                <table id="todayOrdersTable" class="data-table">
+                    <thead>
+                         <tr>
+                            <th>Delivery Date & Time</th>
+                            <th>Order No.</th>
+                            <th>Customer Name</th>
+                            <th>Order Details/Items</th>
+                            <th>Total Amount</th>
+                            <th>Total Paid</th>
+                            <th>Balance Due</th>
+                            <th>Payment History (Type & All Pmts)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 30px;">Today's Expenses Details (Deduction)</h3>
+            <div class="reports-container">
+                <table id="todayExpensesTable" class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Expense Type / Details</th>
+                            <th>Amount</th>
+                            <th>Payment Mode</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+
+            <p style="margin-top: 15px; font-size: 12px; color: #555;">*The Summary boxes show net collection (Total Collection - Total Expenses) for today.</p>
+        </div>
+
+        <div id="duePaymentsList" class="tab-content" style="display:none;">
+            <h2>Due Payments List (Balance Due > ₹0.00)</h2>
+            
+            <div class="filter-controls" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                <input type="date" id="filterDueDeliveryDate" placeholder="Filter by Delivery Date">
+                <input type="text" id="filterDueOrderNo" placeholder="Filter by Order No.">
+                <input type="text" id="filterDueCustomerName" placeholder="Filter by Customer Name">
+                 <select id="filterDueOrderType">
+                    <option value="">-- Filter by Order Type --</option>
+                </select>
+                <button onclick="renderDuePaymentsList()" class="btn-action btn-print-action">Apply Filter / Search</button>
+            </div>
+
+            <div class="export-buttons" style="margin-bottom: 20px; display: flex; gap: 10px;">
+                <button onclick="printDuePaymentsList()" class="btn-action btn-print-action" style="background-color: #dc3545;">Print Due Payments (Portrait)</button>
+                <button onclick="exportDueToCSV()" class="btn-action btn-export" style="background-color: #ff9800;">Export CSV (Due List)</button>
+            </div>
+
+            <div class="reports-container">
+                <table id="duePaymentsTable" class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Order No. & Dates</th> <th>Customer Name & Items</th>
+                            <th>Total Amount</th>
+                            <th>Total Paid</th> 
+                            <th>Balance Due</th>
+                            <th>Last Payment/History</th> <th>Actions</th> 
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+            <p style="margin-top: 15px; font-size: 12px; color: #dc3545; font-weight: 600;">*This list shows only those orders where the balance due is greater than ₹0.00.</p>
+        </div>
+        <div id="allOrdersList" class="tab-content" style="display:none;">
+            <h2>All Orders List & Management</h2>
+            
+            <div class="filter-controls" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                <input type="date" id="filterListDate" placeholder="Filter by Delivery Date">
+                <input type="text" id="filterListOrderNo" placeholder="Filter by Order No.">
+                <input type="text" id="filterListCustomerName" placeholder="Filter by Customer Name">
+                 <select id="filterListOrderType">
+                    <option value="">-- Filter by Order Type --</option>
+                </select>
+                <button onclick="renderAllOrdersList()" class="btn-action btn-print-action">Apply Filter</button>
+            </div>
+
+            <div class="reports-container">
+                <table id="allOrdersTable" class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Order No. & Type</th> <th>Customer Name & Items</th>
+                            <th>Total Amount</th>
+                            <th>Total Paid</th> 
+                            <th>Balance Due</th>
+                            <th>Payment History</th> <th>Actions</th> 
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="reports" class="tab-content" style="display:none;">
+            <h2>Sales Reports & Filters (All Time Data)</h2>
+
+            <div class="summary-box">
+                <div class="summary-item" id="reportsTotalOrderValue">
+                    <span class="label">Total Order Value (Kitna Hua)</span>
+                    <span class="value">₹0.00</span>
+                </div>
+                <div class="summary-item" id="reportsTotalCollected">
+                    <span class="label">Total Paid (Kitna Diya)</span>
+                    <span class="value">₹0.00</span>
+                </div>
+                <div class="summary-item" id="reportsTotalDue">
+                    <span class="label">Total Balance Due (Kitna Bachs)</span>
+                    <span class="value">₹0.00</span>
+                </div>
+            </div>
+            
+            <div class="filter-controls" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                <input type="date" id="filterDate" placeholder="Filter by Delivery Date">
+                <input type="text" id="filterOrderNo" placeholder="Filter by Order No.">
+                <input type="text" id="filterCustomerName" placeholder="Filter by Customer Name">
+                 <select id="filterReportsOrderType">
+                    <option value="">-- Filter by Order Type --</option>
+                </select>
+                <button onclick="renderReports()" class="btn-action btn-print-action">Apply Filter</button>
+            </div>
+
+            <div class="export-buttons" style="margin-bottom: 20px; display: flex; gap: 10px;">
+                <button onclick="exportToJSON()" class="btn-action btn-export" style="background-color: #6f42c1;">Backup Data (JSON)</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importFromJSON(event)">
+                <button onclick="triggerImport()" class="btn-action btn-export" style="background-color: #ff9800;">Import Data (JSON)</button>
+                <button onclick="exportToPDF()" class="btn-action btn-export">Export PDF (Print)</button>
+                <button onclick="exportToCSV()" class="btn-action btn-export">Export Filtered CSV</button>
+                <button onclick="printReports()" class="btn-action btn-print-action">Print Filtered Report</button>
+            </div>
+
+            <div class="reports-container">
+                <table id="reportsTable" class="data-table reports-print-table">
+                    <thead>
+                        <tr>
+                            <th>Order No. & Type</th> <th>Customer Name & Items</th>
+                            <th>Order Date / Del. Date</th> <th>Total Amount</th>
+                            <th>Total Paid</th> 
+                            <th>Balance Due</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div id="customerLedgerTab" class="tab-content" style="display:none;">
+            <h2>Customer Consolidated Ledger</h2>
+
+            <div class="filter-controls" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: flex-end;">
+                 <div class="form-group" style="flex: 1; min-width: 250px; margin-bottom: 0;">
+                    <label for="selectCustomer">Select Customer to View Ledger</label>
+                    <select id="selectCustomer" onchange="renderConsolidatedLedger()">
+                        <option value="">-- Select Customer --</option>
+                    </select>
+                 </div>
+                 <p id="consolidatedLedgerMessage" style="color: #007bff; font-weight: 600; margin: 0; align-self: center;">Please select a customer to view their complete ledger.</p>
+            </div>
+            
+             <div id="customerLedgerPaymentSection" style="display: none; border: 1px solid #007bff; padding: 15px; margin-bottom: 20px; border-radius: 8px; background-color: #f0f8ff;">
+                <h4 style="margin-top: 0; color: #007bff;">Record Consolidated Payment (Not tied to a single order)</h4>
+                <form id="consolidatedPaymentForm" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+                    <input type="hidden" id="consolidatedCustomerName">
+                    <div class="form-group" style="flex: 1 1 120px; margin-bottom: 0;">
+                        <label for="consolidatedPaymentDate">Date</label>
+                        <input type="date" id="consolidatedPaymentDate" required>
+                    </div>
+                    <div class="form-group" style="flex: 1 1 120px; margin-bottom: 0;">
+                        <label for="consolidatedPaymentAmount">Amount (₹)</label>
+                        <input type="number" id="consolidatedPaymentAmount" step="0.01" min="0.01" required>
+                    </div>
+                     <div class="form-group" style="flex: 1 1 120px; margin-bottom: 0;">
+                        <label for="consolidatedPaymentMode">Mode</label>
+                        <select id="consolidatedPaymentMode" required>
+                            <option value="Cash">Cash</option>
+                            <option value="UPI">UPI</option>
+                            <option value="Card">Card</option>
+                            <option value="Bank NEFT">Bank NEFT</option>
+                            <option value="Cheque">Cheque</option>
+                            <option value="Credit">Credit</option>
+                            <option value="Counter Pay">Counter Pay</option>
+                        </select>
+                    </div>
+                     <div class="form-group" style="flex: 2 1 150px; margin-bottom: 0;">
+                        <label for="consolidatedPaymentRemark">Remark (Optional)</label>
+                        <input type="text" id="consolidatedPaymentRemark">
+                    </div>
+                    <button type="submit" class="btn-action btn-submit" style="background-color: #28a745; flex: 0 0 auto; margin-bottom: 0;">Save Payment</button>
+                </form>
+             </div>
+
+
+            <div id="consolidatedLedgerContent" style="display: none;">
+                <div class="ledger-summary-fixed">
+                    <p class="ledger-summary-item">Customer: <span id="ledgerCustomerNameConsolidated"></span></p>
+                    <p class="ledger-summary-item">Mobile: <span id="ledgerCustomerMobileConsolidated"></span></p>
+                    <p class="ledger-summary-item" style="color: #007bff;">Total Debits (Orders): <span id="ledgerTotalDebitConsolidated"></span></p>
+                    <p class="ledger-summary-item" style="color: #28a745;">Total Credits (Payments): <span id="ledgerTotalCreditConsolidated"></span></p>
+                    <p class="ledger-summary-item">Final Balance Due: <span id="ledgerBalanceDueConsolidated" style="color: #dc3545;"></span></p>
+                </div>
+                <div class="export-buttons" style="margin-bottom: 20px; display: flex; gap: 10px;">
+                    <button onclick="printConsolidatedLedger()" class="btn-action btn-print-action">Print Ledger (Portrait)</button>
+                    <button onclick="exportConsolidatedToCSV()" class="btn-action btn-export">Export Ledger CSV</button>
+                </div>
+                <div class="reports-container">
+                    <table id="consolidatedLedgerTable" class="data-table reports-print-table">
+                         <thead>
+                            <tr>
+                                <th>Date & Time</th> <th>Details (Order/Payment/Delivery)</th>
+                                <th>Debit (Order Amt.)</th> <th>Credit (Payment Amt. & Mode)</th>
+                                <th>Balance</th> <th>Order No.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="expenseManagement" class="tab-content" style="display:none;">
+            <h2>Manage Business Expenses</h2>
+            
+            <h3>Add New Expense</h3>
+            <form id="expenseForm">
+                <input type="hidden" id="expenseId" value="">
+
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div class="form-group" style="flex: 1 1 150px;">
+                        <label for="expenseDate">Expense Date (Required)</label>
+                        <input type="date" id="expenseDate" required>
+                    </div>
+                     <div class="form-group" style="flex: 1 1 100px;">
+                        <label for="expenseTime">Expense Time (Optional)</label>
+                        <input type="time" id="expenseTime">
+                    </div>
+                    <div class="form-group" style="flex: 1 1 150px;">
+                        <label for="expenseAmount">Amount (Required)</label>
+                        <input type="number" id="expenseAmount" step="0.01" min="0.01" required>
+                    </div>
+                    <div class="form-group" style="flex: 1 1 150px;">
+                        <label for="expenseType">Expense Type (Required)</label>
+                        <select id="expenseType" required>
+                            <option value="Salary">Salary/Wages</option>
+                            <option value="Rent">Rent/Utilities</option>
+                            <option value="Fuel">Fuel/Transport</option>
+                            <option value="Raw Material">Raw Material/Purchase</option>
+                            <option value="Maintenance">Maintenance/Repair</option>
+                            <option value="Other">Other/Misc.</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 1 1 150px;">
+                        <label for="expensePaymentMode">Payment Mode (Required)</label>
+                        <select id="expensePaymentMode" required>
+                            <option value="Cash">Cash</option>
+                            <option value="UPI">UPI</option>
+                            <option value="Card">Card</option>
+                            <option value="Bank NEFT">Bank NEFT</option>
+                            <option value="Cheque">Cheque</option>
+                            <option value="Counter Pay">Counter Pay</option>
+                            <option value="Credit">Credit</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="expenseDetails">Details / Description (Required)</label>
+                    <input type="text" id="expenseDetails" required>
+                </div>
+
+                <button type="submit" class="btn-submit" style="background-color: #ff9800;">Save Expense</button>
+            </form>
+            
+            <hr style="margin: 30px 0; border-top: 1px solid #ccc;">
+
+            <h3>Recent Expenses List</h3>
+            <div class="filter-controls" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                <input type="date" id="filterExpenseDate" placeholder="Filter by Date">
+                <input type="text" id="filterExpenseDetails" placeholder="Filter by Details">
+                <select id="filterExpenseType">
+                    <option value="">-- Filter by Type --</option>
+                    <option value="Salary">Salary/Wages</option>
+                    <option value="Rent">Rent/Utilities</option>
+                    <option value="Fuel">Fuel/Transport</option>
+                    <option value="Raw Material">Raw Material/Purchase</option>
+                    <option value="Maintenance">Maintenance/Repair</option>
+                    <option value="Other">Other/Misc.</option>
+                </select>
+                <button onclick="renderExpenseList()" class="btn-action btn-print-action">Apply Filter</button>
+            </div>
+            
+            <div class="reports-container">
+                <table id="expenseTable" class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">Date & Time</th>
+                            <th style="width: 30%;">Details / Type</th>
+                            <th style="width: 15%;">Amount</th>
+                            <th style="width: 15%;">Payment Mode</th>
+                            <th style="width: 25%;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="ledgerModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeLedgerModal()">&times;</span>
+            <h2 id="modalOrderTitle">Order Details</h2>
+            
+            <div class="ledger-summary-fixed">
+                <p class="ledger-summary-item">Order No: <span id="ledgerOrderNo"></span> (<span id="ledgerOrderType"></span>)</p>
+                <p class="ledger-summary-item">Customer: <span id="ledgerCustomerName"></span></p>
+                <p class="ledger-summary-item">Mobile: <span id="ledgerCustomerMobile"></span></p>
+                <p class="ledger-summary-item" style="color: #007bff;">Total Order Amt: <span id="ledgerTotalAmount"></span></p>
+                <p class="ledger-summary-item" style="color: #28a745;">Total Paid: <span id="ledgerTotalPaid"></span></p>
+                <p class="ledger-summary-item">Balance Due: <span id="ledgerBalanceDue" style="color: #dc3545;"></span></p>
+            </div>
+
+            <h3>Item Details & Delivery Status</h3>
+            <div class="reports-container" style="max-height: 250px; overflow-y: auto; margin-bottom: 20px;">
+                <table id="orderDetailsTable" class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Item/Box Name</th>
+                            <th>Qty. Ordered</th>
+                            <th>Rate</th>
+                            <th>Total Price</th>
+                            <th>Qty. Delivered</th>
+                            <th>Qty. Remaining</th>
+                            <th>Delivery Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+
+
+            <div id="newPaymentSection" style="border: 1px solid #28a745; padding: 15px; margin-bottom: 20px; border-radius: 8px; background-color: #f0fff4;">
+                <h4 style="margin-top: 0; color: #28a745;">Record New Payment</h4>
+                <form id="paymentForm" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+                    <input type="hidden" id="paymentOrderId">
+                    <div class="form-group" style="flex: 1 1 120px; margin-bottom: 0;">
+                        <label for="paymentDate">Date</label>
+                        <input type="date" id="paymentDate" required>
+                    </div>
+                    <div class="form-group" style="flex: 1 1 120px; margin-bottom: 0;">
+                        <label for="paymentTime">Time</label>
+                        <input type="time" id="paymentTime">
+                    </div>
+                    <div class="form-group" style="flex: 1 1 120px; margin-bottom: 0;">
+                        <label for="paymentAmount">Amount (₹)</label>
+                        <input type="number" id="paymentAmount" step="0.01" min="0.01" required>
+                    </div>
+                     <div class="form-group" style="flex: 1 1 120px; margin-bottom: 0;">
+                        <label for="paymentModeModal">Mode</label>
+                        <select id="paymentModeModal" required>
+                            <option value="Cash">Cash</option>
+                            <option value="UPI">UPI</option>
+                            <option value="Card">Card</option>
+                            <option value="Bank NEFT">Bank NEFT</option>
+                            <option value="Cheque">Cheque</option>
+                            <option value="Credit">Credit</option>
+                            <option value="Counter Pay">Counter Pay</option>
+                        </select>
+                    </div>
+                     <div class="form-group" style="flex: 2 1 150px; margin-bottom: 0;">
+                        <label for="paymentRemark">Remark (Optional)</label>
+                        <input type="text" id="paymentRemark">
+                    </div>
+                    <button type="submit" class="btn-action btn-submit" style="background-color: #007bff; flex: 0 0 auto; margin-bottom: 0;">Save Payment</button>
+                </form>
+            </div>
+
+            <div class="export-buttons" style="margin-bottom: 10px; display: flex; gap: 10px;">
+                 <button onclick="printOrderLedger()" class="btn-action btn-print-action" id="ledgerPrintButton">Print Order/Ledger (Portrait)</button>
+            </div>
+            
+            <h3>Transaction History (Ledger)</h3>
+            <div class="reports-container">
+                <table id="ledgerTable" class="data-table reports-print-table">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th> <th>Details (Order/Payment/Delivery)</th>
+                            <th>Debit (Order Amt.)</th> <th>Credit (Payment Amt. & Mode)</th>
+                            <th>Balance</th> <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        /* --- SECURITY CONFIGURATION --- */
+        const APP_PASSWORD = "12345"; // CHANGE THIS PASSWORD IF NEEDED
+
+        // Initial Unlock Function
+        function unlockSystem() {
+            const input = document.getElementById('sysPassword').value;
+            const errorMsg = document.getElementById('loginError');
+            
+            if (input === APP_PASSWORD) {
+                document.getElementById('securityOverlay').style.display = 'none';
+                errorMsg.style.display = 'none';
+            } else {
+                errorMsg.style.display = 'block';
+            }
+        }
+
+        // Tab/Action verification helper
+        function verifyPasswordAction() {
+            let pass = prompt("Enter System Password to Access/Action:");
+            if (pass === APP_PASSWORD) {
+                return true;
+            } else {
+                alert("Incorrect Password! Access Denied.");
+                return false;
+            }
+        }
+
+        // --- Utility Functions ---
+        
+        // Local Storage Management
+        function getOrders() {
+            return JSON.parse(localStorage.getItem('orders')) || [];
+        }
+        function saveOrders(orders) {
+            localStorage.setItem('orders', JSON.stringify(orders));
+        }
+        function getLedger() {
+            return JSON.parse(localStorage.getItem('ledger')) || [];
+        }
+        function saveLedger(ledger) {
+            localStorage.setItem('ledger', JSON.stringify(ledger));
+        }
+
+        // Date/Time Helpers
+        function generateId() {
+            return Date.now();
+        }
+        function getTodayDateString() {
+            return new Date().toISOString().split('T')[0];
+        }
+        function getCurrentTimeString() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+        function formatDisplayDate(dateString) {
+            if (!dateString) return 'N/A';
+            const [year, month, day] = dateString.split('-');
+            return `${day}/${month}/${year}`;
+        }
+        function formatDisplayDateTime(dateString, timeString) {
+             if (!dateString) return 'N/A';
+             let formattedDate = formatDisplayDate(dateString);
+             return timeString ? `${formattedDate} ${timeString}` : formattedDate;
+        }
+
+        // Formatting Helpers
+        function formatCurrency(amount) {
+            const num = parseFloat(amount) || 0;
+            return `₹${num.toFixed(2)}`;
+        }
+        function getPaymentModeClass(mode) {
+             // Use existing color classes for payment modes
+             const modeLower = mode.toLowerCase();
+             if (modeLower.includes('cash')) return 'payment-mode-cash';
+             if (modeLower.includes('upi')) return 'payment-mode-upi';
+             if (modeLower.includes('card')) return 'payment-mode-card';
+             if (modeLower.includes('bank') || modeLower.includes('cheque') || modeLower.includes('counter pay')) return 'payment-mode-bank';
+             if (modeLower.includes('credit')) return 'payment-mode-credit'; // Could use red for credit
+             return '';
+        }
+        
+        function formatBoxDetailsAsHtml(boxDetails) {
+            if (!boxDetails || boxDetails.length === 0) return '';
+            let html = '<ul class="order-item-list">';
+            boxDetails.forEach(box => {
+                const total = (parseFloat(box.qty) * parseFloat(box.rate)).toFixed(2);
+                const delivered = parseFloat(box.deliveredQty) || 0;
+                const remaining = parseFloat(box.qty) - delivered;
+                const deliveryStatus = remaining > 0 
+                    ? `<span class="remaining-text">(${remaining} rem.)</span>` 
+                    : `<span class="delivered-text">(Delivered)</span>`;
+                html += `<li>${box.name} - Qty: ${box.qty} x Rate: ${formatCurrency(box.rate)} (${formatCurrency(total)}) ${deliveryStatus}</li>`;
+            });
+            html += '</ul>';
+            return html;
+        }
+        
+        function getFullPaymentHistoryHtml(orderId) {
+            const ledger = getLedger();
+            const payments = ledger.filter(t => t.orderId === orderId && t.type === 'PAYMENT' && parseFloat(t.credit) > 0);
+            if (payments.length === 0) return 'No Payments';
+            
+            let html = '<ul class="payment-history-list">';
+            payments.sort((a, b) => b.id - a.id); // Newest first
+            payments.forEach(p => {
+                const modeClass = getPaymentModeClass(p.mode);
+                html += `<li>${formatCurrency(p.credit)} on ${formatDisplayDate(p.date)} by <strong class="${modeClass}">${p.mode}</strong></li>`;
+            });
+            html += '</ul>';
+            return html;
+        }
+
+
+        // --- Core Business Logic ---
+        
+        // Function to calculate total amount paid for an order
+        function getTotalPaidAmount(orderId) {
+            const ledger = getLedger();
+            const payments = ledger.filter(t => t.orderId === orderId && parseFloat(t.credit) > 0 && t.type === 'PAYMENT');
+            const totalPaid = payments.reduce((sum, t) => sum + parseFloat(t.credit), 0);
+            return totalPaid.toFixed(2);
+        }
+
+        // --- Tab Management (SECURED) ---
+        function openTab(tabName, elmnt) {
+            // SECURITY CHECK
+            if (!verifyPasswordAction()) return;
+
+            // Hide all tab content
+            const tabcontent = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+
+            // Remove the 'active' class from all buttons
+            const tablinks = document.getElementsByClassName("tab-button");
+            for (let i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+
+            // Show the current tab, and add an "active" class to the button that opened the tab
+            document.getElementById(tabName).style.display = "block";
+            elmnt.className += " active";
+
+            // Re-render data for the opened tab
+            if (tabName === 'todaySummary') {
+                renderTodaySummary();
+            } else if (tabName === 'duePaymentsList') {
+                renderDuePaymentsList();
+            } else if (tabName === 'allOrdersList') {
+                renderAllOrdersList();
+            } else if (tabName === 'reports') {
+                renderReports();
+            } else if (tabName === 'customerLedgerTab') {
+                populateCustomerSelect(); // Also clears the ledger content
+            }
+            // NEW LOGIC
+            else if (tabName === 'expenseManagement') { 
+                resetExpenseForm(); 
+                renderExpenseList(); 
+            }
+        }
+
+        // Function to calculate total amount for all boxes
+        function calculateTotalAmount() {
+            let total = 0;
+            const boxItems = document.getElementById('boxDetailsContainer').getElementsByClassName('box-item');
+            Array.from(boxItems).forEach(item => {
+                const qty = parseFloat(item.querySelector('.box-qty').value) || 0;
+                const rate = parseFloat(item.querySelector('.box-rate').value) || 0;
+                total += qty * rate;
+            });
+            document.getElementById('totalAmount').value = total.toFixed(2);
+            calculateBalance();
+        }
+
+        // Function to calculate the balance due
+        function calculateBalance() {
+            const total = parseFloat(document.getElementById('totalAmount').value) || 0;
+            const advance = parseFloat(document.getElementById('advancePayment').value) || 0;
+            const balance = total - advance;
+            document.getElementById('balanceShow').value = balance.toFixed(2);
+        }
+
+        // Function to dynamically add box/item input fields
+        function addBoxItem(box = { name: '', qty: 1, rate: 0.00, deliveredQty: 0 }) {
+            const container = document.getElementById('boxDetailsContainer');
+            const index = container.children.length;
+
+            const boxItemDiv = document.createElement('div');
+            boxItemDiv.classList.add('box-item');
+            boxItemDiv.setAttribute('data-index', index);
+            
+            boxItemDiv.innerHTML = `
+                <span class="box-number">${index + 1}.</span>
+                <input type="hidden" class="delivered-qty" value="${box.deliveredQty}">
+                
+                <div class="form-group">
+                    <label>Item/Box Name</label>
+                    <input type="text" class="box-name" value="${box.name}" required>
+                </div>
+                <div class="form-group">
+                    <label>Qty. Ordered</label>
+                    <input type="number" class="box-qty" min="1" step="1" value="${box.qty}" oninput="calculateTotalAmount()" required>
+                </div>
+                <div class="form-group">
+                    <label>Rate (Per Qty.)</label>
+                    <input type="number" class="box-rate" min="0" step="0.01" value="${box.rate.toFixed(2)}" oninput="calculateTotalAmount()" required>
+                </div>
+                <button type="button" class="btn-action btn-delete" onclick="removeBoxItem(this)">X</button>
+            `;
+            container.appendChild(boxItemDiv);
+            
+            // Recalculate if values were pre-filled (during edit)
+            calculateTotalAmount();
+        }
+
+        // Function to remove a box/item input field
+        function removeBoxItem(buttonEl) {
+            const boxItem = buttonEl.closest('.box-item');
+            boxItem.remove();
+            
+            // Re-index remaining items
+            const container = document.getElementById('boxDetailsContainer');
+            Array.from(container.children).forEach((item, index) => {
+                item.setAttribute('data-index', index);
+                item.querySelector('.box-number').textContent = `${index + 1}.`;
+            });
+            
+            calculateTotalAmount();
+        }
+
+
+        // --- Order Form Submission ---
+        document.getElementById('orderForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const isEdit = document.getElementById('orderId').value !== '';
+            
+            const orderId = isEdit ? Number(document.getElementById('orderId').value) : generateId();
+            const orderNo = document.getElementById('orderNo').value.trim();
+            const orderDate = document.getElementById('orderDate').value;
+            const deliveryDate = document.getElementById('deliveryDate').value;
+            const deliveryTime = document.getElementById('deliveryTime').value || 'N/A';
+            const customerName = document.getElementById('customerName').value.trim();
+            const mobile = document.getElementById('mobile').value.trim() || 'N/A';
+            const orderType = document.getElementById('orderType').value;
+            const totalAmount = document.getElementById('totalAmount').value;
+            const initialAdvance = parseFloat(document.getElementById('advancePayment').value) || 0;
+            const initialPaymentMode = document.getElementById('paymentMode').value;
+            const initialPaymentDate = document.getElementById('initialPaymentDate').value;
+            
+            // Extract box details
+            const boxDetails = [];
+            const boxItems = document.getElementById('boxDetailsContainer').getElementsByClassName('box-item');
+            Array.from(boxItems).forEach(item => {
+                boxDetails.push({
+                    name: item.querySelector('.box-name').value.trim(),
+                    qty: parseFloat(item.querySelector('.box-qty').value) || 0,
+                    rate: parseFloat(item.querySelector('.box-rate').value) || 0,
+                    deliveredQty: parseFloat(item.querySelector('.delivered-qty').value) || 0 // Preserve delivered quantity
+                });
+            });
+
+            if (boxDetails.length === 0) {
+                 alert("Please add at least one item/box detail.");
+                 return;
+            }
+
+            let orders = getOrders();
+            let ledger = getLedger();
+            
+            const newOrder = {
+                id: orderId,
+                orderNo,
+                orderDate,
+                deliveryDate,
+                deliveryTime,
+                customerName,
+                mobile,
+                orderType,
+                totalAmount,
+                boxDetails
+            };
+
+            if (isEdit) {
+                // Update Order entry
+                const orderIndex = orders.findIndex(o => o.id === orderId);
+                if (orderIndex !== -1) {
+                    orders[orderIndex] = newOrder;
+                    
+                    // Update the ORDER_DEBIT entry in the ledger
+                    const debitEntryIndex = ledger.findIndex(t => t.orderId === orderId && t.type === 'ORDER_DEBIT');
+                    if (debitEntryIndex !== -1) {
+                         ledger[debitEntryIndex].date = orderDate;
+                         ledger[debitEntryIndex].details = `Total Order Value (${formatBoxDetailsAsHtml(newOrder.boxDetails)})`; // Update item details in ledger entry
+                         ledger[debitEntryIndex].debit = totalAmount; // Update amount
+                    }
+                    
+                    // Re-calculate payments only if total amount changed (complex, better to rely on getTotalPaidAmount later)
+                }
+                alert("Order updated successfully!");
+
+            } else {
+                // Check for duplicate Order No. only on new entry
+                if (orders.some(o => o.orderNo === orderNo)) {
+                    alert(`Order No. ${orderNo} already exists. Please use a unique number.`);
+                    return;
+                }
+                
+                // New Order entry
+                orders.push(newOrder);
+                
+                // Ledger Entry for Order Amount (DEBIT)
+                ledger.push({
+                    id: generateId(), 
+                    orderId: newOrder.id,
+                    type: 'ORDER_DEBIT',
+                    customerName: customerName,
+                    mobile: mobile,
+                    date: orderDate,
+                    time: getCurrentTimeString(),
+                    details: `Total Order Value (${formatBoxDetailsAsHtml(newOrder.boxDetails)})`,
+                    debit: totalAmount,
+                    credit: '0.00',
+                    mode: 'N/A'
+                });
+
+                // Ledger Entry for Initial Payment (CREDIT)
+                if (initialAdvance > 0) {
+                    ledger.push({
+                        id: generateId(),
+                        orderId: newOrder.id,
+                        type: 'PAYMENT',
+                        customerName: customerName,
+                        mobile: mobile,
+                        date: initialPaymentDate || orderDate,
+                        time: getCurrentTimeString(),
+                        details: `Initial Advance Payment for Order ${orderNo}`,
+                        debit: '0.00',
+                        credit: initialAdvance.toFixed(2),
+                        mode: initialPaymentMode
+                    });
+                }
+                alert("New Order saved successfully!");
+            }
+
+            saveOrders(orders);
+            saveLedger(ledger); 
+            
+            // Re-render relevant tables and reset form
+            resetForm();
+            renderAllOrdersList();
+            renderDuePaymentsList();
+            renderTodaySummary();
+            renderReports();
+            populateCustomerSelect(); // Update customer list for ledger
+            populateOrderTypeFilters(); // Update order type filters
+        });
+
+        // Function to reset the form
+        function resetForm() {
+            document.getElementById('orderForm').reset();
+            document.getElementById('orderId').value = ''; 
+            
+            // Clear and re-initialize box details
+            const container = document.getElementById('boxDetailsContainer');
+            container.innerHTML = '';
+            addBoxItem();
+
+            // Set default dates/values
+            const today = getTodayDateString();
+            document.getElementById('orderDate').value = today;
+            document.getElementById('deliveryDate').value = today;
+            document.getElementById('initialPaymentDate').value = today;
+            document.getElementById('advancePayment').value = '0';
+            document.getElementById('paymentMode').value = 'Cash'; 
+            document.getElementById('totalAmount').value = '0.00';
+            document.getElementById('balanceShow').value = '0.00';
+            
+            // Change button text back to 'Save Order'
+            document.querySelector('#orderForm button[type="submit"]').textContent = 'Save Order';
+        }
+
+        // Function to load order data into the form for editing
+        function editOrder(orderId) {
+            const orders = getOrders();
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+
+            document.getElementById('orderId').value = order.id;
+            document.getElementById('orderNo').value = order.orderNo;
+            document.getElementById('orderDate').value = order.orderDate;
+            document.getElementById('deliveryDate').value = order.deliveryDate;
+            document.getElementById('deliveryTime').value = order.deliveryTime !== 'N/A' ? order.deliveryTime : '';
+            document.getElementById('customerName').value = order.customerName;
+            document.getElementById('mobile').value = order.mobile !== 'N/A' ? order.mobile : '';
+            document.getElementById('orderType').value = order.orderType;
+            document.getElementById('totalAmount').value = parseFloat(order.totalAmount).toFixed(2);
+            
+            // Find the initial payment entry to pre-fill the initial payment section
+            const ledger = getLedger();
+            const initialPayment = ledger.find(t => 
+                t.orderId === orderId && 
+                t.type === 'PAYMENT' && 
+                t.details.includes('Initial Advance Payment')
+            );
+            
+            const initialAdvance = initialPayment ? parseFloat(initialPayment.credit) : 0;
+            const initialPaymentMode = initialPayment ? initialPayment.mode : 'Cash';
+            const initialPaymentDate = initialPayment ? initialPayment.date : getTodayDateString();
+            
+            document.getElementById('advancePayment').value = initialAdvance.toFixed(2);
+            document.getElementById('paymentMode').value = initialPaymentMode;
+            document.getElementById('initialPaymentDate').value = initialPaymentDate;
+
+            // Clear and re-populate box details
+            const container = document.getElementById('boxDetailsContainer');
+            container.innerHTML = '';
+            order.boxDetails.forEach(box => addBoxItem(box)); 
+            
+            // Recalculate everything once loaded
+            calculateTotalAmount(); 
+
+            // Change button text to indicate editing
+            document.querySelector('#orderForm button[type="submit"]').textContent = 'Update Order';
+            
+            // Switch to the addOrder tab (bypassing password check for internal switch)
+            // Manual Logic to switch
+            const tabcontent = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabcontent.length; i++) tabcontent[i].style.display = "none";
+            const tablinks = document.getElementsByClassName("tab-button");
+            for (let i = 0; i < tablinks.length; i++) tablinks[i].className = tablinks[i].className.replace(" active", "");
+            
+            document.getElementById('addOrder').style.display = "block";
+            // Highlight first button
+            document.querySelector('.tab-menu button:nth-child(1)').className += " active";
+        }
+
+        // Function to delete an entire order and all associated ledger entries
+        function deleteOrder(orderId) {
+            if (confirm("Are you sure you want to delete this entire order and all its payment/delivery history? This action cannot be undone.")) {
+                let orders = getOrders();
+                let ledger = getLedger();
+
+                // Remove the order
+                orders = orders.filter(o => o.id !== orderId);
+
+                // Remove all associated ledger entries
+                ledger = ledger.filter(t => t.orderId !== orderId);
+
+                saveOrders(orders);
+                saveLedger(ledger);
+                
+                // Re-render
+                renderAllOrdersList();
+                renderDuePaymentsList();
+                renderTodaySummary();
+                renderReports();
+                populateCustomerSelect(); // Update customer list
+                alert("Order and all associated history deleted successfully!");
+            }
+        }
+   // --- Today Summary Logic (FINAL FIXED VERSION) ---
+function renderTodaySummary() {
+    const today = getTodayDateString();
+    const orders = getOrders();
+    const ledger = getLedger();
+    const tableBody = document.querySelector('#todayOrdersTable tbody');
+    tableBody.innerHTML = '';
+    const filterOrderType = document.getElementById('filterTodayOrderType').value;
+
+    // 1. Filter Payments Today (Income)
+    const todayPayments = ledger.filter(t => t.date === today && parseFloat(t.credit) > 0 && t.type === 'PAYMENT');
+    
+    // 2. Filter Expenses Today (Deduction) - Support both Ledger and direct Expense data
+    let todayExpenses = ledger.filter(t => t.date === today && (t.type === 'EXPENSE' || t.debit > 0 && !t.orderId));
+
+    // 3. Collection Calculations
+    let cashTotal = 0, upiTotal = 0, cardTotal = 0, otherElectronicTotal = 0, totalAdvance = 0, totalDue = 0;
+    
+    todayPayments.forEach(t => {
+        const amount = parseFloat(t.credit || 0);
+        totalAdvance += amount;
+        if (t.mode === 'Cash') cashTotal += amount;
+        else if (t.mode === 'UPI') upiTotal += amount;
+        else if (t.mode === 'Card') cardTotal += amount;
+        else otherElectronicTotal += amount;
+    });
+    
+    // 4. Expense Calculations
+    let totalExpense = 0, expCash = 0, expUpi = 0, expCard = 0, expOther = 0;
+
+    todayExpenses.forEach(t => {
+        const amount = parseFloat(t.debit || 0);
+        totalExpense += amount;
+        if (t.mode === 'Cash') expCash += amount;
+        else if (t.mode === 'UPI') expUpi += amount;
+        else if (t.mode === 'Card') expCard += amount;
+        else expOther += amount;
+    });
+    
+    // 5. Net Calculations (Collection - Expense)
+    const netCash = cashTotal - expCash;
+    const netUpi = upiTotal - expUpi;
+    const netCard = cardTotal - expCard;
+    const netOther = otherElectronicTotal - expOther;
+    const netTotalFinal = totalAdvance - totalExpense;
+
+    // 6. Render Orders Table
+    const todayOrderIds = [...new Set(todayPayments.map(t => t.orderId))].filter(id => id && id !== 'N/A');
+    orders.filter(order => todayOrderIds.includes(order.id) && (!filterOrderType || order.orderType === filterOrderType))
+    .forEach(order => {
+        const totalPaid = getTotalPaidAmount(order.id);
+        const balanceDue = parseFloat(order.totalAmount || 0) - totalPaid;
+        totalDue += balanceDue;
+        
+        const row = tableBody.insertRow();
+        row.insertCell().innerHTML = `<strong>${formatDisplayDate(order.deliveryDate)}</strong><br><small>${order.deliveryTime || 'N/A'}</small>`;
+        row.insertCell().textContent = order.orderNo;
+        row.insertCell().textContent = order.customerName;
+        row.insertCell().innerHTML = formatBoxDetailsAsHtml(order.boxDetails);
+        row.insertCell().textContent = formatCurrency(order.totalAmount);
+        row.insertCell().textContent = formatCurrency(totalPaid);
+        const balanceCell = row.insertCell();
+        balanceCell.textContent = formatCurrency(balanceDue);
+        if (balanceDue > 0) balanceCell.style.color = '#dc3545';
+        row.insertCell().innerHTML = getFullPaymentHistoryHtml(order.id);
+    });
+    
+    // 7. Update Summary Boxes (FIXING THE BLANK BOXES)
+    document.getElementById('todayTitle').textContent = `Today's Sales Summary (${formatDisplayDate(today)})`;
+    
+    const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if(el) {
+            const valEl = el.querySelector('.value');
+            if(valEl) valEl.textContent = formatCurrency(val);
+        }
+    };
+
+    setVal('todayTotalCashSum', netCash);
+    setVal('todayTotalUPISum', netUpi);
+    setVal('todayTotalCardSum', netCard);
+    setVal('todayTotalOtherElectronicSum', netOther);
+    setVal('todayTotalCreditSum', totalDue);
+    setVal('todayTotalExpensesSum', totalExpense); // FIX: Expense Box
+    setVal('todayGrossTotalAdvance', netTotalFinal); // FIX: Net Final Box
+
+    // 8. Render Expenses Table Details (FIXING THE BOTTOM TABLE)
+    const expTableBody = document.querySelector('#todayExpensesTable tbody');
+    if (expTableBody) {
+        expTableBody.innerHTML = '';
+        todayExpenses.forEach(t => {
+            const row = expTableBody.insertRow();
+            row.insertCell().textContent = t.time || '--:--';
+            row.insertCell().textContent = t.details || 'Expense';
+            row.insertCell().innerHTML = `<strong style="color: #dc3545;">${formatCurrency(t.debit)}</strong>`;
+            row.insertCell().innerHTML = `<strong>${t.mode}</strong>`;
+        });
+        if(todayExpenses.length === 0) {
+            expTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No Expenses Recorded Today</td></tr>';
+        }
+    }
+}
+
+        function printTodaySummary() {
+            if(verifyPasswordAction()) window.print();
+        }
+
+
+        // --- Due Payments List Logic ---
+        function renderDuePaymentsList() {
+            const orders = getOrders();
+            const tableBody = document.querySelector('#duePaymentsTable tbody');
+            tableBody.innerHTML = '';
+
+            // Filters
+            const filterDueDeliveryDate = document.getElementById('filterDueDeliveryDate').value;
+            const filterDueOrderNo = document.getElementById('filterDueOrderNo').value.toLowerCase();
+            const filterDueCustomerName = document.getElementById('filterDueCustomerName').value.toLowerCase();
+            const filterDueOrderType = document.getElementById('filterDueOrderType').value;
+
+            const filteredOrders = orders.filter(order => {
+                const totalPaid = getTotalPaidAmount(order.id);
+                const balanceDue = parseFloat(order.totalAmount) - totalPaid;
+                // FIX: Ensure balance is strictly greater than 0 after rounding to 2 decimal places
+                const balanceDueFixed = parseFloat(balanceDue.toFixed(2));
+                
+                const matchesDate = !filterDueDeliveryDate || order.deliveryDate === filterDueDeliveryDate;
+                const matchesOrderNo = !filterDueOrderNo || (order.orderNo && order.orderNo.toLowerCase().includes(filterDueOrderNo));
+                const matchesCustomerName = !filterDueCustomerName || order.customerName.toLowerCase().includes(filterDueCustomerName);
+                const matchesOrderType = !filterDueOrderType || order.orderType === filterDueOrderType;
+                
+                return balanceDueFixed > 0.00 && matchesDate && matchesOrderNo && matchesCustomerName && matchesOrderType;
+            });
+
+            filteredOrders.forEach(order => {
+                const totalPaid = getTotalPaidAmount(order.id);
+                const balanceDue = parseFloat(order.totalAmount) - totalPaid;
+                
+                const row = tableBody.insertRow();
+                // Order No. & Dates
+                row.insertCell().innerHTML = `<strong>${order.orderNo} (${order.orderType || 'REGULAR'})</strong><br><small>Order: ${formatDisplayDate(order.orderDate)}</small><br><small>Delivery: ${formatDisplayDate(order.deliveryDate)}</small>`;
+                // Customer Name & Items
+                row.insertCell().innerHTML = `<strong>${order.customerName}</strong><br><small>Mobile: ${order.mobile || 'N/A'}</small>${formatBoxDetailsAsHtml(order.boxDetails)}`;
+                row.insertCell().textContent = formatCurrency(order.totalAmount);
+                row.insertCell().textContent = formatCurrency(totalPaid);
+                // Balance Due
+                row.insertCell().textContent = formatCurrency(balanceDue);
+                // Last Payment/History
+                row.insertCell().innerHTML = getFullPaymentHistoryHtml(order.id);
+                // Actions
+                const actionCell = row.insertCell();
+                const ledgerBtn = document.createElement('button');
+                ledgerBtn.textContent = 'Pay/Ledger';
+                ledgerBtn.classList.add('btn-action', 'btn-ledger');
+                ledgerBtn.onclick = () => openLedgerModal(order.id);
+                actionCell.appendChild(ledgerBtn);
+            });
+        }
+
+        function printDuePaymentsList() {
+            if(verifyPasswordAction()) window.print();
+        }
+
+        // Export Due Payments to CSV (UPDATED: Added Delivery Time & Order Type)
+        function exportDueToCSV() {
+            const orders = getOrders();
+            
+            // Filters
+            const filterDueDeliveryDate = document.getElementById('filterDueDeliveryDate').value;
+            const filterDueOrderNo = document.getElementById('filterDueOrderNo').value.toLowerCase();
+            const filterDueCustomerName = document.getElementById('filterDueCustomerName').value.toLowerCase();
+            const filterDueOrderType = document.getElementById('filterDueOrderType').value;
+            
+            const dueOrders = orders.filter(order => {
+                const totalPaid = getTotalPaidAmount(order.id);
+                const balanceDue = parseFloat(order.totalAmount) - totalPaid;
+                const balanceDueFixed = parseFloat(balanceDue.toFixed(2)); // FIX for due balance zero issue
+                
+                const matchesDate = !filterDueDeliveryDate || order.deliveryDate === filterDueDeliveryDate;
+                const matchesOrderNo = !filterDueOrderNo || (order.orderNo && order.orderNo.toLowerCase().includes(filterDueOrderNo));
+                const matchesCustomerName = !filterDueCustomerName || order.customerName.toLowerCase().includes(filterDueCustomerName);
+                const matchesOrderType = !filterDueOrderType || order.orderType === filterDueOrderType;
+                
+                return balanceDueFixed > 0.00 && matchesDate && matchesOrderNo && matchesCustomerName && matchesOrderType;
+            });
+            
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Order No,Order Type,Customer Name,Mobile,Order Date,Delivery Date,Delivery Time,Total Amount,Total Paid,Balance Due,Item Details\n";
+
+            dueOrders.forEach(order => {
+                const totalPaid = getTotalPaidAmount(order.id);
+                const balanceDue = (parseFloat(order.totalAmount) - totalPaid).toFixed(2);
+                const itemDetails = order.boxDetails.map(box => {
+                    const delivered = parseFloat(box.deliveredQty) || 0;
+                    const remaining = parseFloat(box.qty) - delivered;
+                    return `${box.name} (Qty: ${box.qty}, Rate: ${box.rate}, Delivered: ${delivered}, Remaining: ${remaining})`;
+                }).join('; ');
+                
+                const row = [
+                    order.orderNo,
+                    order.orderType || 'REGULAR',
+                    order.customerName,
+                    order.mobile || 'N/A',
+                    formatDisplayDate(order.orderDate),
+                    formatDisplayDate(order.deliveryDate),
+                    order.deliveryTime || 'N/A',
+                    order.totalAmount,
+                    totalPaid,
+                    balanceDue,
+                    itemDetails.replace(/"/g, '""') 
+                ].map(r => `"${r}"`).join(",");
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Due_Payments_List_${getTodayDateString()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- All Orders List Logic ---
+        function renderAllOrdersList() {
+            const orders = getOrders();
+            const tableBody = document.querySelector('#allOrdersTable tbody');
+            tableBody.innerHTML = '';
+
+            // Filters
+            const filterListDate = document.getElementById('filterListDate').value;
+            const filterListOrderNo = document.getElementById('filterListOrderNo').value.toLowerCase();
+            const filterListCustomerName = document.getElementById('filterListCustomerName').value.toLowerCase();
+            const filterListOrderType = document.getElementById('filterListOrderType').value;
+            
+            const filteredOrders = orders.filter(order => {
+                const matchesDate = !filterListDate || order.deliveryDate === filterListDate;
+                const matchesOrderNo = !filterListOrderNo || (order.orderNo && order.orderNo.toLowerCase().includes(filterListOrderNo));
+                const matchesCustomerName = !filterListCustomerName || order.customerName.toLowerCase().includes(filterListCustomerName);
+                const matchesOrderType = !filterListOrderType || order.orderType === filterListOrderType;
+                return matchesDate && matchesOrderNo && matchesCustomerName && matchesOrderType;
+            });
+
+            filteredOrders.forEach(order => {
+                const totalPaid = getTotalPaidAmount(order.id);
+                const balanceDue = parseFloat(order.totalAmount) - totalPaid;
+
+                const row = tableBody.insertRow();
+                // Order No. & Type
+                row.insertCell().innerHTML = `<strong>${order.orderNo}</strong><br><small>${order.orderType || 'REGULAR'}</small><br><small>Del: ${formatDisplayDate(order.deliveryDate)}</small>`;
+                // Customer Name & Items
+                row.insertCell().innerHTML = `<strong>${order.customerName}</strong><br><small>Mobile: ${order.mobile || 'N/A'}</small>${formatBoxDetailsAsHtml(order.boxDetails)}`;
+                row.insertCell().textContent = formatCurrency(order.totalAmount);
+                row.insertCell().textContent = formatCurrency(totalPaid);
+                // Balance Due
+                row.insertCell().textContent = formatCurrency(balanceDue);
+                // Payment History
+                row.insertCell().innerHTML = getFullPaymentHistoryHtml(order.id);
+                // Actions
+                const actionCell = row.insertCell();
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Edit';
+                editBtn.classList.add('btn-action', 'btn-edit');
+                editBtn.onclick = () => editOrder(order.id);
+                actionCell.appendChild(editBtn);
+                const ledgerBtn = document.createElement('button');
+                ledgerBtn.textContent = 'Ledger';
+                ledgerBtn.classList.add('btn-action', 'btn-ledger');
+                ledgerBtn.onclick = () => openLedgerModal(order.id);
+                actionCell.appendChild(ledgerBtn);
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.classList.add('btn-action', 'btn-delete');
+                deleteBtn.onclick = () => deleteOrder(order.id);
+                actionCell.appendChild(deleteBtn);
+            });
+        }
+
+
+        // --- Reports Logic ---
+        function renderReports() {
+            const orders = getOrders();
+            const tableBody = document.querySelector('#reportsTable tbody');
+            tableBody.innerHTML = '';
+            
+            // Filters
+            const filterDate = document.getElementById('filterDate').value;
+            const filterOrderNo = document.getElementById('filterOrderNo').value.toLowerCase();
+            const filterCustomerName = document.getElementById('filterCustomerName').value.toLowerCase();
+            const filterReportsOrderType = document.getElementById('filterReportsOrderType').value;
+
+            let totalOrderValue = 0;
+            let totalCollected = 0;
+            let totalDue = 0;
+
+            const filteredOrders = orders.filter(order => {
+                const matchesDate = !filterDate || order.deliveryDate === filterDate;
+                const matchesOrderNo = !filterOrderNo || (order.orderNo && order.orderNo.toLowerCase().includes(filterOrderNo));
+                const matchesCustomerName = !filterCustomerName || order.customerName.toLowerCase().includes(filterCustomerName);
+                const matchesOrderType = !filterReportsOrderType || order.orderType === filterReportsOrderType;
+                return matchesDate && matchesOrderNo && matchesCustomerName && matchesOrderType;
+            });
+
+
+            filteredOrders.forEach(order => {
+                const totalPaid = getTotalPaidAmount(order.id);
+                const balanceDue = parseFloat(order.totalAmount) - totalPaid;
+
+                totalOrderValue += parseFloat(order.totalAmount);
+                totalCollected += parseFloat(totalPaid);
+                totalDue += balanceDue;
+
+                const row = tableBody.insertRow();
+                // Order No. & Type
+                row.insertCell().innerHTML = `<strong>${order.orderNo}</strong><br><small>${order.orderType || 'REGULAR'}</small>`;
+                // Customer Name & Items
+                row.insertCell().innerHTML = `<strong>${order.customerName}</strong><br><small>Mobile: ${order.mobile || 'N/A'}</small>${formatBoxDetailsAsHtml(order.boxDetails)}`;
+                // Order Date / Del. Date
+                row.insertCell().innerHTML = `Order: ${formatDisplayDate(order.orderDate)}<br>Del: ${formatDisplayDate(order.deliveryDate)}`;
+                row.insertCell().textContent = formatCurrency(order.totalAmount);
+                row.insertCell().textContent = formatCurrency(totalPaid);
+                // Balance Due
+                row.insertCell().textContent = formatCurrency(balanceDue);
+                // Payment History
+                // row.insertCell().innerHTML = getFullPaymentHistoryHtml(order.id);
+            });
+
+            // Update Summary Boxes
+            document.getElementById('reportsTotalOrderValue').querySelector('.value').textContent = formatCurrency(totalOrderValue);
+            document.getElementById('reportsTotalCollected').querySelector('.value').textContent = formatCurrency(totalCollected);
+            document.getElementById('reportsTotalDue').querySelector('.value').textContent = formatCurrency(totalDue);
+        }
+
+        function printReports() {
+            if(verifyPasswordAction()) window.print();
+        }
+
+        // Export to CSV (All Orders/Filtered Report)
+        function exportToCSV() {
+            const orders = getOrders();
+            // Filters (use current filter values from the Reports tab)
+            const filterDate = document.getElementById('filterDate').value;
+            const filterOrderNo = document.getElementById('filterOrderNo').value.toLowerCase();
+            const filterCustomerName = document.getElementById('filterCustomerName').value.toLowerCase();
+            const filterReportsOrderType = document.getElementById('filterReportsOrderType').value;
+            
+            const filteredOrders = orders.filter(order => {
+                const matchesDate = !filterDate || order.deliveryDate === filterDate;
+                const matchesOrderNo = !filterOrderNo || (order.orderNo && order.orderNo.toLowerCase().includes(filterOrderNo));
+                const matchesCustomerName = !filterCustomerName || order.customerName.toLowerCase().includes(filterCustomerName);
+                const matchesOrderType = !filterReportsOrderType || order.orderType === filterReportsOrderType;
+                return matchesDate && matchesOrderNo && matchesCustomerName && matchesOrderType;
+            });
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Order No,Order Type,Customer Name,Mobile,Order Date,Delivery Date,Delivery Time,Total Amount,Total Paid,Balance Due,Item Details\n";
+
+            filteredOrders.forEach(order => {
+                const totalPaid = getTotalPaidAmount(order.id);
+                const balanceDue = (parseFloat(order.totalAmount) - totalPaid).toFixed(2);
+                const itemDetails = order.boxDetails.map(box => {
+                    const delivered = parseFloat(box.deliveredQty) || 0;
+                    const remaining = parseFloat(box.qty) - delivered;
+                    return `${box.name} (Qty: ${box.qty}, Rate: ${box.rate}, Delivered: ${delivered}, Remaining: ${remaining})`;
+                }).join('; ');
+
+                const row = [
+                    order.orderNo,
+                    order.orderType || 'REGULAR',
+                    order.customerName,
+                    order.mobile || 'N/A',
+                    formatDisplayDate(order.orderDate),
+                    formatDisplayDate(order.deliveryDate),
+                    order.deliveryTime || 'N/A',
+                    order.totalAmount,
+                    totalPaid,
+                    balanceDue,
+                    itemDetails.replace(/"/g, '""') 
+                ].map(r => `"${r}"`).join(",");
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Sales_Report_${getTodayDateString()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // Export/Import/PDF Logic
+        function exportToJSON() {
+            const data = {
+                orders: getOrders(),
+                ledger: getLedger(),
+                exportDate: new Date().toISOString()
+            };
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `tally_backup_${getTodayDateString()}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            alert("Data backed up successfully!");
+        }
+
+        function triggerImport() {
+             document.getElementById('importFile').click();
+        }
+
+        function importFromJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!confirm("WARNING: Importing data will overwrite ALL your current data (Orders, Ledger, etc.). Are you sure you want to proceed?")) {
+                document.getElementById('importFile').value = ''; // Reset file input
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (importedData.orders && importedData.ledger) {
+                        saveOrders(importedData.orders);
+                        saveLedger(importedData.ledger);
+                        alert("Data imported successfully! Please refresh the page to ensure all views are updated.");
+                        // Force refresh views
+                        renderAllOrdersList();
+                        renderDuePaymentsList();
+                        renderTodaySummary();
+                        renderReports();
+                        populateCustomerSelect();
+                        populateOrderTypeFilters();
+                    } else {
+                        alert("Error: Imported JSON file does not contain valid data (missing 'orders' or 'ledger').");
+                    }
+                } catch (error) {
+                    alert("Error importing data: " + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function exportToPDF() {
+            alert("PDF Export is a complex feature. For now, please use the 'Print' function and select 'Save as PDF' from your printer settings.");
+        }
+
+
+        // --- Customer Ledger Tab Logic ---
+        function populateCustomerSelect() {
+            const orders = getOrders();
+            const select = document.getElementById('selectCustomer');
+            const currentValue = select.value;
+
+            // Get unique customer names
+            const customerNames = [...new Set(orders.map(o => o.customerName))].sort();
+
+            // Clear existing options, but preserve the default one
+            select.innerHTML = '<option value="">-- Select Customer --</option>';
+
+            customerNames.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                select.appendChild(option);
+            });
+
+            // Restore previous selection if it still exists
+            select.value = currentValue;
+
+            // Clear the ledger view when the select box updates
+            document.getElementById('consolidatedLedgerContent').style.display = 'none';
+            document.getElementById('customerLedgerPaymentSection').style.display = 'none'; // HIDE PAYMENT FORM
+            document.getElementById('consolidatedLedgerMessage').style.display = 'block';
+            document.getElementById('consolidatedLedgerMessage').textContent = 'Please select a customer to view their complete ledger.';
+        }
+
+        function renderConsolidatedLedger() {
+            const selectedCustomer = document.getElementById('selectCustomer').value;
+            const messageDiv = document.getElementById('consolidatedLedgerMessage');
+            const contentDiv = document.getElementById('consolidatedLedgerContent');
+            const paymentDiv = document.getElementById('customerLedgerPaymentSection');
+            const tableBody = document.querySelector('#consolidatedLedgerTable tbody');
+            tableBody.innerHTML = '';
+
+            if (!selectedCustomer) {
+                contentDiv.style.display = 'none';
+                paymentDiv.style.display = 'none';
+                messageDiv.style.display = 'block';
+                messageDiv.textContent = 'Please select a customer to view their complete ledger.';
+                return;
+            }
+
+            messageDiv.style.display = 'none';
+            contentDiv.style.display = 'block';
+
+            // Show payment form and set customer defaults
+            paymentDiv.style.display = 'block';
+            document.getElementById('consolidatedCustomerName').value = selectedCustomer;
+            document.getElementById('consolidatedPaymentDate').value = getTodayDateString();
+            document.getElementById('consolidatedPaymentAmount').value = ''; // Clear amount
+            document.getElementById('consolidatedPaymentMode').value = 'Cash';
+            document.getElementById('consolidatedPaymentRemark').value = '';
+            
+            const orders = getOrders();
+            const ledger = getLedger();
+            
+            // Filter ledger for the selected customer, including consolidated payments (orderId='N/A')
+            const customerLedger = ledger.filter(t => t.customerName === selectedCustomer);
+            
+            // Get customer mobile from the latest order
+            const customerOrders = orders.filter(o => o.customerName === selectedCustomer);
+            const mobile = customerOrders.length > 0 ? customerOrders[0].mobile : 'N/A';
+
+            // Calculate Summary
+            const totalDebit = customerLedger.reduce((sum, t) => sum + parseFloat(t.debit), 0);
+            const totalCredit = customerLedger.reduce((sum, t) => sum + parseFloat(t.credit), 0);
+            const balanceDue = totalDebit - totalCredit;
+
+            // Update Summary DOM
+            document.getElementById('ledgerCustomerNameConsolidated').textContent = selectedCustomer;
+            document.getElementById('ledgerCustomerMobileConsolidated').textContent = mobile;
+            document.getElementById('ledgerTotalDebitConsolidated').textContent = formatCurrency(totalDebit);
+            document.getElementById('ledgerTotalCreditConsolidated').textContent = formatCurrency(totalCredit);
+            const balanceDueConsolidatedEl = document.getElementById('ledgerBalanceDueConsolidated');
+            balanceDueConsolidatedEl.textContent = formatCurrency(balanceDue);
+            if (balanceDue > 0.01) balanceDueConsolidatedEl.style.color = '#dc3545';
+            else if (balanceDue < -0.01) balanceDueConsolidatedEl.style.color = '#28a745';
+            else balanceDueConsolidatedEl.style.color = '#007bff';
+
+            // Render Transactions
+            let currentBalance = 0;
+            customerLedger.sort((a, b) => a.id - b.id); // Sort by original entry order
+            
+            customerLedger.forEach(t => {
+                // Skip Expense entries in customer ledger (They are separate business transactions)
+                if (t.type === 'EXPENSE') return;
+
+                currentBalance += parseFloat(t.debit) || 0;
+                currentBalance -= parseFloat(t.credit) || 0;
+                
+                const row = tableBody.insertRow();
+                const dateTime = formatDisplayDateTime(t.date, t.time);
+                const modeClass = getPaymentModeClass(t.mode);
+                let orderDetails = ''; 
+                
+                // Get Order No/Type if available and not a consolidated payment
+                if (t.orderId && t.orderId !== 'N/A') {
+                    const order = getOrders().find(o => o.id == t.orderId);
+                    if (order) {
+                        orderDetails = `<br><small style="color:#666;">Order: ${order.orderNo} (${order.orderType || 'REGULAR'})</small>`;
+                    }
+                } else if (t.type === 'PAYMENT_CONSOLIDATED') {
+                     // This is a consolidated payment entry, no order ID
+                } else if (t.type === 'ORDER_DEBIT') {
+                    // This is an order debit, find the order
+                    const order = getOrders().find(o => o.id == t.orderId);
+                     if (order) {
+                        orderDetails = `<br><small style="color:#666;">Order: ${order.orderNo} (${order.orderType || 'REGULAR'})</small>`;
+                    }
+                }
+
+
+                // 1. Date & Time (1st Col)
+                row.insertCell().innerHTML = dateTime;
+                
+                // 2. Details (2nd Col)
+                let detailsHtml = t.details + orderDetails;
+                if (t.type === 'ORDER_DEBIT') detailsHtml = `<strong>Order Placed:</strong> ${t.details}` + orderDetails;
+                if (t.type === 'DELIVERY') {
+                    detailsHtml = `<span style="color: #ff9800; font-weight: 600;">Delivery Audit:</span> ${t.details}` + orderDetails;
+                    row.style.backgroundColor = '#f3faff';
+                }
+                if (t.type === 'PAYMENT') detailsHtml = `<strong>Payment Received (Order):</strong> ${t.details}` + orderDetails;
+                if (t.type === 'PAYMENT_CONSOLIDATED') detailsHtml = `<strong>Payment Received (Consolidated):</strong> ${t.details}`;
+                row.insertCell().innerHTML = detailsHtml;
+
+                // 3. Debit (3rd Col)
+                const debitCell = row.insertCell();
+                debitCell.textContent = t.debit === '0.00' ? '-' : formatCurrency(t.debit);
+                if (t.type.includes('DEBIT')) debitCell.style.color = '#007bff'; 
+
+                // 4. Credit (4th Col)
+                const creditCell = row.insertCell();
+                if (t.type === 'DELIVERY' || t.type.includes('DEBIT')) {
+                    creditCell.innerHTML = '-';
+                } else {
+                    creditCell.innerHTML = t.credit === '0.00' ? '-' : `${formatCurrency(t.credit)} by <strong class="${modeClass}">${t.mode}</strong>`;
+                }
+
+                // 5. Balance (5th Col)
+                const balanceCell = row.insertCell();
+                balanceCell.textContent = formatCurrency(currentBalance);
+                if (currentBalance > 0.01) balanceCell.style.color = '#dc3545';
+                else if (currentBalance < -0.01) balanceCell.style.color = '#28a745';
+                else balanceCell.style.color = '#007bff';
+                
+                // 6. Order No. (6th Col)
+                const orderCell = row.insertCell();
+                 if (t.orderId && t.orderId !== 'N/A') {
+                    const order = getOrders().find(o => o.id == t.orderId);
+                    orderCell.textContent = order ? order.orderNo : 'N/A';
+                } else {
+                     orderCell.textContent = 'N/A';
+                }
+            });
+        }
+        
+        document.getElementById('consolidatedPaymentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const customerName = document.getElementById('consolidatedCustomerName').value;
+            const paymentDate = document.getElementById('consolidatedPaymentDate').value;
+            const paymentAmount = parseFloat(document.getElementById('consolidatedPaymentAmount').value) || 0;
+            const paymentMode = document.getElementById('consolidatedPaymentMode').value;
+            const paymentRemark = document.getElementById('consolidatedPaymentRemark').value.trim();
+
+            if (paymentAmount <= 0) {
+                alert("Payment amount must be greater than zero.");
+                return;
+            }
+
+            // Check total due before payment
+            const ledger = getLedger().filter(t => t.customerName === customerName && t.type !== 'EXPENSE'); // Exclude expenses
+            const totalDebit = ledger.reduce((sum, t) => sum + parseFloat(t.debit), 0);
+            const totalCredit = ledger.reduce((sum, t) => sum + parseFloat(t.credit), 0);
+            const balanceDue = totalDebit - totalCredit;
+
+            if (paymentAmount > balanceDue && balanceDue > 0.01) {
+                if (!confirm(`This payment of ₹${paymentAmount.toFixed(2)} is more than the balance due of ₹${balanceDue.toFixed(2)}. This will result in an overpayment/negative balance. Do you want to proceed?`)) {
+                    return;
+                }
+            }
+
+            let allLedger = getLedger();
+            // Add new payment entry (CREDIT) - Note: orderId is N/A since it's a consolidated customer payment
+            allLedger.push({
+                id: generateId(), 
+                orderId: 'N/A',
+                type: 'PAYMENT_CONSOLIDATED', // Use a special type for consolidated payments
+                customerName: customerName,
+                mobile: getOrders().find(o => o.customerName === customerName)?.mobile || 'N/A',
+                date: paymentDate,
+                time: getCurrentTimeString(),
+                details: paymentRemark || 'Consolidated Customer Payment',
+                debit: '0.00',
+                credit: paymentAmount.toFixed(2),
+                mode: paymentMode
+            });
+
+            saveLedger(allLedger);
+            
+            // Re-render the customer ledger and other relevant views
+            renderConsolidatedLedger();
+            renderDuePaymentsList(); 
+            renderTodaySummary();
+            renderReports(); 
+            
+            alert(`Consolidated Payment of ₹${paymentAmount.toFixed(2)} saved successfully!`);
+        });
+
+        function printConsolidatedLedger() {
+             if(verifyPasswordAction()) window.print();
+        }
+        
+        function exportConsolidatedToCSV() {
+            const selectedCustomer = document.getElementById('selectCustomer').value;
+            if (!selectedCustomer) {
+                alert("Please select a customer first.");
+                return;
+            }
+            
+            const ledger = getLedger().filter(t => t.customerName === selectedCustomer && t.type !== 'EXPENSE');
+            const orders = getOrders();
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Date,Time,Details,Order No,Debit (Order Amt.),Credit (Payment Amt.),Mode,Balance\n";
+
+            let currentBalance = 0;
+            ledger.sort((a, b) => a.id - b.id); 
+
+            ledger.forEach(t => {
+                currentBalance += parseFloat(t.debit) || 0;
+                currentBalance -= parseFloat(t.credit) || 0;
+                
+                let orderNo = 'N/A';
+                 if (t.orderId && t.orderId !== 'N/A') {
+                    const order = orders.find(o => o.id == t.orderId);
+                    orderNo = order ? order.orderNo : 'N/A';
+                }
+
+                const row = [
+                    t.date,
+                    t.time || 'N/A',
+                    t.details.replace(/"/g, '""'),
+                    orderNo,
+                    t.debit,
+                    t.credit,
+                    t.mode,
+                    currentBalance.toFixed(2)
+                ].map(r => `"${r}"`).join(",");
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `${selectedCustomer.replace(/[^a-z0-9]/gi, '_')}_Ledger_${getTodayDateString()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- Ledger Modal Logic (Per Order) ---
+        function openLedgerModal(orderId) {
+            const modal = document.getElementById('ledgerModal');
+            const paymentForm = document.getElementById('paymentForm');
+            const paymentDateEl = document.getElementById('paymentDate');
+            const paymentTimeEl = document.getElementById('paymentTime');
+            
+            // Reset modal form
+            paymentForm.reset();
+            paymentDateEl.value = getTodayDateString();
+            paymentTimeEl.value = getCurrentTimeString();
+            document.getElementById('paymentModeModal').value = 'Cash';
+            document.getElementById('paymentRemark').value = '';
+            
+            // Render the content first
+            renderOrderLedger(orderId);
+            
+            modal.style.display = 'block';
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    closeLedgerModal();
+                }
+            }
+        }
+
+        function closeLedgerModal() {
+            document.getElementById('ledgerModal').style.display = 'none';
+            window.onclick = null; // Remove the window click handler
+        }
+
+        function renderOrderLedger(orderId) {
+            const orders = getOrders();
+            const order = orders.find(o => o.id === orderId);
+            if (!order) { closeLedgerModal(); return; }
+            
+            const totalPaid = getTotalPaidAmount(order.id);
+            const balanceDue = parseFloat(order.totalAmount) - totalPaid;
+
+            // Update Summary
+            document.getElementById('modalOrderTitle').textContent = `Order Details: ${order.orderNo}`;
+            document.getElementById('ledgerOrderNo').textContent = order.orderNo;
+            document.getElementById('ledgerOrderType').textContent = order.orderType;
+            document.getElementById('ledgerCustomerName').textContent = order.customerName;
+            document.getElementById('ledgerCustomerMobile').textContent = order.mobile;
+            document.getElementById('ledgerTotalAmount').textContent = formatCurrency(order.totalAmount);
+            document.getElementById('ledgerTotalPaid').textContent = formatCurrency(totalPaid);
+            
+            const balanceDueEl = document.getElementById('ledgerBalanceDue');
+            balanceDueEl.textContent = formatCurrency(balanceDue);
+            if (balanceDue > 0) balanceDueEl.style.color = '#dc3545';
+            else if (balanceDue < 0) balanceDueEl.style.color = '#28a745';
+            else balanceDueEl.style.color = '#007bff';
+
+            // Pre-fill payment amount if balance is due
+            document.getElementById('paymentAmount').value = balanceDue > 0 ? balanceDue.toFixed(2) : '0.00';
+            document.getElementById('paymentOrderId').value = order.id;
+
+
+            // --- Render Item Details Table ---
+            const detailsBody = document.querySelector('#orderDetailsTable tbody');
+            detailsBody.innerHTML = '';
+            
+            order.boxDetails.forEach((box, index) => {
+                const row = detailsBody.insertRow();
+                const total = (box.qty * box.rate).toFixed(2);
+                const delivered = parseFloat(box.deliveredQty) || 0;
+                const remaining = box.qty - delivered;
+
+                row.insertCell().textContent = index + 1;
+                row.insertCell().textContent = box.name;
+                row.insertCell().textContent = box.qty;
+                row.insertCell().textContent = formatCurrency(box.rate);
+                row.insertCell().textContent = formatCurrency(total);
+                row.insertCell().innerHTML = delivered > 0 ? `<span class="delivered-text">${delivered}</span>` : '0';
+                row.insertCell().innerHTML = remaining > 0 ? `<span class="remaining-text">${remaining}</span>` : '0';
+
+                // Delivery Action Cell
+                const actionCell = row.insertCell();
+                actionCell.innerHTML = `
+                    <input type="number" class="delivery-qty" min="1" max="${remaining}" placeholder="Del. Qty (Max ${remaining})" value="${remaining > 0 ? remaining : ''}" ${remaining === 0 ? 'disabled' : ''}>
+                    <input type="date" class="delivery-date" value="${getTodayDateString()}" ${remaining === 0 ? 'disabled' : ''}>
+                    <button class="btn-action btn-delivery" onclick="recordDelivery(${order.id}, ${index}, this)" ${remaining === 0 ? 'disabled' : ''}>Record Delivery</button>
+                `;
+            });
+
+
+            // --- Render Transaction History Table (Ledger) ---
+            const ledgerBody = document.querySelector('#ledgerTable tbody');
+            ledgerBody.innerHTML = '';
+            
+            const ledger = getLedger().filter(t => t.orderId === order.id).sort((a, b) => a.id - b.id); // Filter by order ID and sort by time of entry
+
+            let currentBalance = 0;
+            
+            ledger.forEach(t => {
+                currentBalance += parseFloat(t.debit) || 0;
+                currentBalance -= parseFloat(t.credit) || 0;
+                
+                const row = ledgerBody.insertRow();
+                const dateTime = formatDisplayDateTime(t.date, t.time);
+                const modeClass = getPaymentModeClass(t.mode);
+
+                // 1. Date & Time (1st Col)
+                row.insertCell().innerHTML = dateTime;
+
+                // 2. Details (2nd Col)
+                let detailsHtml = t.details;
+                if (t.type === 'ORDER_DEBIT') detailsHtml = `<strong>Order Placed:</strong> ${detailsHtml}`;
+                if (t.type === 'DELIVERY') detailsHtml = `<span style="color: #ff9800; font-weight: 600;">Delivery Audit:</span> ${detailsHtml}`;
+                if (t.type === 'PAYMENT') detailsHtml = `<strong>Payment Received:</strong> ${t.details}`;
+                row.insertCell().innerHTML = detailsHtml;
+
+                // 3. Order Debit (3rd Col)
+                const debitCell = row.insertCell();
+                debitCell.textContent = t.debit === '0.00' ? '-' : formatCurrency(t.debit);
+                if (t.type === 'ORDER_DEBIT') debitCell.style.color = '#007bff';
+
+                // 4. Payment Credit (4th Col)
+                const creditCell = row.insertCell();
+                if (t.type === 'DELIVERY' || t.type.includes('DEBIT')) {
+                    creditCell.innerHTML = '-';
+                    if (t.type === 'DELIVERY') row.style.backgroundColor = '#f3faff'; // Highlight delivery row
+                } else {
+                    creditCell.innerHTML = t.credit === '0.00' ? '-' : `${formatCurrency(t.credit)} by <strong class="${modeClass}">${t.mode}</strong>`;
+                }
+                
+                // 5. Balance (5th Col)
+                const balanceCell = row.insertCell();
+                balanceCell.textContent = formatCurrency(currentBalance);
+                if (currentBalance > 0.01) balanceCell.style.color = '#dc3545';
+                else if (currentBalance < -0.01) balanceCell.style.color = '#28a745';
+                else balanceCell.style.color = '#007bff';
+
+                // 6. Actions (6th Col)
+                const actionCell = row.insertCell();
+                if (t.type === 'DELIVERY' || t.type === 'PAYMENT') {
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.classList.add('btn-action', 'btn-delete');
+                    deleteBtn.onclick = () => deleteLedgerEntry(t.id, orderId);
+                    actionCell.appendChild(deleteBtn);
+                } else {
+                    actionCell.textContent = '-';
+                }
+            });
+        }
+        
+        // --- Delivery Logic ---
+        function recordDelivery(orderId, boxIndex, buttonEl) {
+            const orders = getOrders();
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+            
+            const box = order.boxDetails[boxIndex];
+            const row = buttonEl.closest('tr');
+            
+            const qtyInput = row.querySelector('.delivery-qty');
+            const dateInput = row.querySelector('.delivery-date');
+            
+            const deliveredQty = parseFloat(qtyInput.value) || 0;
+            const deliveryDate = dateInput.value;
+            const maxQty = parseFloat(qtyInput.max);
+
+            if (deliveredQty <= 0 || deliveredQty > maxQty) {
+                alert(`Please enter a valid quantity between 1 and ${maxQty}.`);
+                return;
+            }
+            if (!deliveryDate) {
+                 alert("Please select a delivery date.");
+                return;
+            }
+
+            if (!confirm(`Confirm delivery of ${deliveredQty} unit(s) of "${box.name}" on ${formatDisplayDate(deliveryDate)}?`)) {
+                return;
+            }
+
+            // 1. Update the order object
+            const currentDelivered = parseFloat(box.deliveredQty) || 0;
+            box.deliveredQty = (currentDelivered + deliveredQty).toFixed(0);
+            
+            // 2. Add entry to ledger
+            let ledger = getLedger();
+            ledger.push({
+                id: generateId(), 
+                orderId: order.id,
+                type: 'DELIVERY',
+                customerName: order.customerName,
+                mobile: order.mobile,
+                date: deliveryDate,
+                time: getCurrentTimeString(),
+                details: `Delivered ${deliveredQty} unit(s) of "${box.name}". Total delivered: ${box.deliveredQty}.`,
+                debit: '0.00',
+                credit: '0.00',
+                mode: 'N/A'
+            });
+            
+            // 3. Save all data
+            saveOrders(orders);
+            saveLedger(ledger);
+            
+            // 4. Re-render the modal and background views
+            renderOrderLedger(orderId);
+            renderAllOrdersList();
+            renderDuePaymentsList();
+            renderTodaySummary();
+            renderReports();
+            
+            alert("Delivery recorded successfully!");
+        }
+
+        // --- Payment Logic (in Modal) ---
+        document.getElementById('paymentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const orderId = Number(document.getElementById('paymentOrderId').value);
+            const paymentDate = document.getElementById('paymentDate').value;
+            const paymentTime = document.getElementById('paymentTime').value || getCurrentTimeString();
+            const paymentAmount = parseFloat(document.getElementById('paymentAmount').value) || 0;
+            const paymentMode = document.getElementById('paymentModeModal').value;
+            const paymentRemark = document.getElementById('paymentRemark').value.trim();
+
+            if (paymentAmount <= 0) {
+                alert("Payment amount must be greater than zero.");
+                return;
+            }
+
+            const orders = getOrders();
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+
+            const totalPaid = getTotalPaidAmount(orderId);
+            const balanceDue = parseFloat(order.totalAmount) - totalPaid;
+            
+            if (paymentAmount > balanceDue && balanceDue > 0.01) {
+                 if (!confirm(`This payment of ₹${paymentAmount.toFixed(2)} is more than the balance due of ₹${balanceDue.toFixed(2)}. This will result in an overpayment/negative balance. Do you want to proceed?`)) {
+                    return;
+                }
+            }
+
+            let ledger = getLedger();
+            
+            // Add new payment entry (CREDIT)
+            ledger.push({
+                id: generateId(), 
+                orderId: order.id,
+                type: 'PAYMENT',
+                customerName: order.customerName,
+                mobile: order.mobile,
+                date: paymentDate,
+                time: paymentTime,
+                details: paymentRemark || 'Ad-hoc Payment',
+                debit: '0.00',
+                credit: paymentAmount.toFixed(2),
+                mode: paymentMode
+            });
+            
+            saveLedger(ledger);
+            
+            // Re-render the ledger modal to show updated status
+            renderOrderLedger(orderId); 
+            
+            // Update all background views
+            renderAllOrdersList();
+            renderDuePaymentsList();
+            renderTodaySummary();
+            renderReports();
+            populateCustomerSelect(); // Ensure customer ledger view updates
+
+            // Reset the payment form in the modal
+            document.getElementById('paymentForm').reset();
+            document.getElementById('paymentDate').value = getTodayDateString();
+            document.getElementById('paymentTime').value = getCurrentTimeString();
+            // Automatically pre-fill the remaining balance after this payment
+            const newBalanceDue = balanceDue - paymentAmount;
+            document.getElementById('paymentAmount').value = newBalanceDue > 0 ? newBalanceDue.toFixed(2) : '0.00';
+            document.getElementById('paymentModeModal').value = 'Cash';
+            document.getElementById('paymentRemark').value = '';
+            
+            alert(`Payment of ₹${paymentAmount.toFixed(2)} saved successfully!`);
+        });
+
+        // Delete ledger entry function
+        function deleteLedgerEntry(entryId, orderId) {
+            if (confirm("Are you sure you want to delete this entry?")) {
+                let ledger = getLedger();
+                const orders = getOrders();
+                const entryToDelete = ledger.find(t => t.id === entryId);
+
+                // Check if deleting a DELIVERY entry
+                if (entryToDelete && entryToDelete.type === 'DELIVERY') {
+                    if(!confirm("This is a Delivery record. Deleting it will NOT reverse the delivered quantity in the order. You must manually correct the delivered quantity in the Item Details table after deletion. Proceed to delete the ledger entry?")) {
+                        return;
+                    }
+                }
+                
+                // Check if deleting the consolidated payment
+                if (entryToDelete && entryToDelete.type === 'PAYMENT_CONSOLIDATED') {
+                    if(!confirm("This is a Consolidated Customer Payment. Deleting it will affect the customer's overall balance. Proceed?")) {
+                        // Pass for now, since we only want to filter out EXPENSE entries in customer ledger.
+                    }
+                }
+                
+                // Filter out the entry
+                ledger = ledger.filter(t => t.id !== entryId);
+                saveLedger(ledger);
+                
+                // Re-render relevant tables
+                if (orderId) {
+                    renderOrderLedger(orderId); // Re-render modal ledger if open
+                } else if (entryToDelete && entryToDelete.type === 'PAYMENT_CONSOLIDATED') {
+                    // This was a consolidated payment, try to re-render consolidated ledger
+                    renderConsolidatedLedger();
+                }
+
+                // Re-render background views
+                renderAllOrdersList();
+                renderDuePaymentsList();
+                renderTodaySummary();
+                renderReports();
+                populateCustomerSelect(); // Re-populate and re-render consolidated ledger content if needed
+                
+                alert("Entry deleted successfully!");
+            }
+        }
+        
+        function printOrderLedger() {
+             if(verifyPasswordAction()) window.print();
+        }
+        
+        // --- Expense Management Logic ---
+        document.getElementById('expenseForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveExpense();
+        });
+
+        // Function to save/edit expense
+        function saveExpense() {
+            const id = document.getElementById('expenseId').value || generateId();
+            const expenseDate = document.getElementById('expenseDate').value;
+            const expenseTime = document.getElementById('expenseTime').value || getCurrentTimeString();
+            const expenseAmount = parseFloat(document.getElementById('expenseAmount').value) || 0;
+            const expenseType = document.getElementById('expenseType').value;
+            const expensePaymentMode = document.getElementById('expensePaymentMode').value;
+            const expenseDetails = document.getElementById('expenseDetails').value.trim();
+            
+            if (expenseAmount <= 0) {
+                alert("Expense amount must be greater than zero.");
+                return;
+            }
+
+            let ledger = getLedger();
+            
+            const newExpenseEntry = {
+                id: Number(id), // Convert back to number
+                orderId: 'N/A', // Not tied to an order
+                type: 'EXPENSE', // New type for expenses
+                customerName: 'EXPENSE',
+                mobile: 'N/A',
+                date: expenseDate,
+                time: expenseTime,
+                details: `${expenseType}: ${expenseDetails}`,
+                debit: expenseAmount.toFixed(2), // Expense is a Debit in the business's cash flow ledger
+                credit: '0.00',
+                mode: expensePaymentMode,
+            };
+
+            if (document.getElementById('expenseId').value) {
+                // Edit existing entry
+                const index = ledger.findIndex(t => t.id == Number(id));
+                if (index !== -1) {
+                    ledger[index] = newExpenseEntry;
+                }
+                alert("Expense updated successfully!");
+            } else {
+                // New entry
+                ledger.push(newExpenseEntry);
+                alert("New Expense saved successfully!");
+            }
+            
+            saveLedger(ledger);
+            
+            // Re-render and reset
+            resetExpenseForm();
+            renderExpenseList();
+            renderTodaySummary(); // Update summary with deduction
+        }
+        
+        function resetExpenseForm() {
+            document.getElementById('expenseForm').reset();
+            document.getElementById('expenseId').value = '';
+            document.getElementById('expenseDate').value = getTodayDateString();
+            document.getElementById('expenseTime').value = getCurrentTimeString();
+            document.getElementById('expensePaymentMode').value = 'Cash'; // Default to Cash
+            // Change button text back to 'Save Expense'
+            document.querySelector('#expenseForm button[type="submit"]').textContent = 'Save Expense';
+        }
+        
+        // Function to load expense data into the form for editing
+        function editExpense(entryId) {
+            const ledger = getLedger();
+            const entry = ledger.find(t => t.id === entryId && t.type === 'EXPENSE');
+            if (!entry) {
+                alert("Expense entry not found for editing.");
+                return;
+            }
+            
+            // Split the combined details back into type and description
+            const details = entry.details.split(': ', 2);
+            const expenseType = details.length > 1 ? details[0] : 'Other';
+            const expenseDetails = details.length > 1 ? details[1] : details[0];
+
+            document.getElementById('expenseId').value = entry.id;
+            document.getElementById('expenseDate').value = entry.date;
+            document.getElementById('expenseTime').value = entry.time;
+            document.getElementById('expenseAmount').value = parseFloat(entry.debit).toFixed(2);
+            document.getElementById('expenseType').value = expenseType; 
+            document.getElementById('expensePaymentMode').value = entry.mode;
+            document.getElementById('expenseDetails').value = expenseDetails;
+            
+            // Change button text to indicate editing
+            document.querySelector('#expenseForm button[type="submit"]').textContent = 'Update Expense';
+            
+            // Switch to the expense tab and scroll to top
+            // Manual switch logic to bypass password prompt for internal logic
+            const tabcontent = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabcontent.length; i++) tabcontent[i].style.display = "none";
+            const tablinks = document.getElementsByClassName("tab-button");
+            for (let i = 0; i < tablinks.length; i++) tablinks[i].className = tablinks[i].className.replace(" active", "");
+            
+            document.getElementById('expenseManagement').style.display = "block";
+            // Highlight button
+             const expBtn = document.querySelector('.tab-menu button[onclick="openTab(\'expenseManagement\', this)"]');
+             if(expBtn) expBtn.className += " active";
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        // Function to delete an expense entry
+        function deleteExpense(entryId) {
+            if (confirm("Are you sure you want to delete this Expense entry? This action cannot be undone.")) {
+                let ledger = getLedger();
+                // Filter out the expense entry
+                ledger = ledger.filter(t => !(t.id === entryId && t.type === 'EXPENSE'));
+                saveLedger(ledger);
+                
+                // Re-render
+                renderExpenseList();
+                renderTodaySummary();
+                alert("Expense entry deleted successfully!");
+            }
+        }
+        
+        // Function to render the expense list table
+        function renderExpenseList() {
+            const ledger = getLedger();
+            const tableBody = document.querySelector('#expenseTable tbody');
+            tableBody.innerHTML = '';
+            
+            // Filters
+            const filterDate = document.getElementById('filterExpenseDate').value;
+            const filterDetails = document.getElementById('filterExpenseDetails').value.toLowerCase();
+            const filterType = document.getElementById('filterExpenseType').value;
+            
+            const filteredExpenses = ledger.filter(t => 
+                t.type === 'EXPENSE' &&
+                (!filterDate || t.date === filterDate) &&
+                (!filterType || t.details.startsWith(`${filterType}:`)) && 
+                (!filterDetails || t.details.toLowerCase().includes(filterDetails))
+            ).sort((a, b) => b.id - a.id); // Sort by newest first
+
+            filteredExpenses.forEach(t => {
+                const row = tableBody.insertRow();
+                const dateTime = formatDisplayDateTime(t.date, t.time);
+                const modeClass = getPaymentModeClass(t.mode);
+                
+                // 1. Date & Time
+                row.insertCell().innerHTML = dateTime;
+                
+                // 2. Details / Type
+                row.insertCell().textContent = t.details;
+                
+                // 3. Amount
+                row.insertCell().innerHTML = `<strong style="color: #dc3545;">${formatCurrency(t.debit)}</strong>`; // Highlight as deduction
+                
+                // 4. Payment Mode
+                row.insertCell().innerHTML = `<strong class="${modeClass}">${t.mode}</strong>`;
+                
+                // 5. Actions
+                const actionCell = row.insertCell();
+                
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Edit';
+                editBtn.classList.add('btn-action', 'btn-edit');
+                editBtn.onclick = () => editExpense(t.id);
+                actionCell.appendChild(editBtn);
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.classList.add('btn-action', 'btn-delete');
+                deleteBtn.onclick = () => deleteExpense(t.id);
+                actionCell.appendChild(deleteBtn);
+            });
+        }
+        
+        // --- Order Type Filter Population ---
+         function populateOrderTypeFilters() {
+             const orders = getOrders();
+             // Get unique order types from all orders
+             const allOrderTypes = [...new Set(orders.map(o => o.orderType))].filter(type => type); // filter out empty strings/nulls
+
+             // Array of select elements to update
+             const selectIds = ['filterTodayOrderType', 'filterDueOrderType', 'filterListOrderType', 'filterReportsOrderType'];
+
+             selectIds.forEach(id => {
+                 const select = document.getElementById(id);
+                 if (!select) return; 
+
+                 // Preserve current value to restore selection after update
+                 const currentValue = select.value; 
+
+                 // Clear existing options, but preserve the default one
+                 select.innerHTML = '<option value="">-- Filter by Order Type --</option>';
+
+                 allOrderTypes.forEach(type => {
+                     const option = document.createElement('option');
+                     option.value = type;
+                     option.textContent = type;
+                     select.appendChild(option);
+                 });
+                 
+                 // Restore preserved selection
+                 select.value = currentValue;
+             });
+        }
+
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+             const today = getTodayDateString();
+             document.getElementById('orderDate').value = today; 
+             document.getElementById('deliveryDate').value = today; 
+             document.getElementById('initialPaymentDate').value = today; 
+             document.getElementById('paymentDate').value = today; 
+             document.getElementById('paymentTime').value = getCurrentTimeString();
+             document.getElementById('orderType').value = 'REGULAR'; 
+             
+             // NEW EXPENSE INITIALIZATION
+             document.getElementById('expenseDate').value = today; 
+             document.getElementById('expenseTime').value = getCurrentTimeString();
+             
+             addBoxItem();
+             
+             // Populate order type filters on load
+             populateOrderTypeFilters(); 
+             
+             // Open the correct tab on load
+             // For initial load, we don't prompt (the overlay handles security), so we manipulate style directly for first tab
+            const tabcontent = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabcontent.length; i++) tabcontent[i].style.display = "none";
+            document.getElementById('addOrder').style.display = "block";
+             
+             populateCustomerSelect();
+        });
+
+    </script>
+
+</body>
+</html>
