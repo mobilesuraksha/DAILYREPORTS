@@ -1158,7 +1158,7 @@
     </div>
     
     <script>
-        /* --- SECURITY CONFIGURATION --- */
+        /* --- SECURITY CONFIGURATION (One Time Login) --- */
         const APP_PASSWORD = "Ramkishan@2025"; // CHANGE THIS PASSWORD IF NEEDED
 
         // Initial Unlock Function
@@ -1171,17 +1171,6 @@
                 errorMsg.style.display = 'none';
             } else {
                 errorMsg.style.display = 'block';
-            }
-        }
-
-        // Tab/Action verification helper
-        function verifyPasswordAction() {
-            let pass = prompt("Enter System Password to Access/Action:");
-            if (pass === APP_PASSWORD) {
-                return true;
-            } else {
-                alert("Incorrect Password! Access Denied.");
-                return false;
             }
         }
 
@@ -1283,11 +1272,8 @@
             return totalPaid.toFixed(2);
         }
 
-        // --- Tab Management (SECURED) ---
+        // --- Tab Management ---
         function openTab(tabName, elmnt) {
-            // SECURITY CHECK
-            if (!verifyPasswordAction()) return;
-
             // Hide all tab content
             const tabcontent = document.getElementsByClassName("tab-content");
             for (let i = 0; i < tabcontent.length; i++) {
@@ -1727,7 +1713,7 @@ function renderTodaySummary() {
 }
 
         function printTodaySummary() {
-            if(verifyPasswordAction()) window.print();
+            window.print();
         }
 
 
@@ -1783,7 +1769,7 @@ function renderTodaySummary() {
         }
 
         function printDuePaymentsList() {
-            if(verifyPasswordAction()) window.print();
+            window.print();
         }
 
         // Export Due Payments to CSV (UPDATED: Added Delivery Time & Order Type)
@@ -1957,7 +1943,7 @@ function renderTodaySummary() {
         }
 
         function printReports() {
-            if(verifyPasswordAction()) window.print();
+            window.print();
         }
 
         // Export to CSV (All Orders/Filtered Report)
@@ -2292,7 +2278,7 @@ function renderTodaySummary() {
         });
 
         function printConsolidatedLedger() {
-             if(verifyPasswordAction()) window.print();
+             window.print();
         }
         
         function exportConsolidatedToCSV() {
@@ -2669,7 +2655,7 @@ function renderTodaySummary() {
         }
         
         function printOrderLedger() {
-             if(verifyPasswordAction()) window.print();
+             window.print();
         }
         
         // --- Expense Management Logic ---
@@ -2910,5 +2896,4 @@ function renderTodaySummary() {
     </script>
 
 </body>
-
 </html>
