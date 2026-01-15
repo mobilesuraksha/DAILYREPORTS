@@ -38,10 +38,8 @@
         .tab-button[onclick*="productionTab"].active { background-color: #d35400; color: white; }
         .tab-button[onclick*="packingTab"] { background-color: #e8f5e9; color: #2e7d32; }
         .tab-button[onclick*="packingTab"].active { background-color: #2e7d32; color: white; }
-        .tab-button[onclick*="monthReport"] { background-color: #e0f7fa; color: #006064; }
-        .tab-button[onclick*="monthReport"].active { background-color: #006064; color: white; }
-        .tab-button[onclick*="reportsTab"] { background-color: #f3e5f5; color: #6a1b9a; }
-        .tab-button[onclick*="reportsTab"].active { background-color: #6a1b9a; color: white; }
+        .tab-button[onclick*="splitTab"] { background-color: #fce4ec; color: #c2185b; }
+        .tab-button[onclick*="splitTab"].active { background-color: #c2185b; color: white; }
 
         .tab-content { display: none; animation: fadeIn 0.5s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -208,6 +206,7 @@
         <button class="tab-button active" onclick="window.openTab('addOrder', this)">New Order</button>
         <button class="tab-button" onclick="window.openTab('productionTab', this)">Production</button>
         <button class="tab-button" onclick="window.openTab('packingTab', this)">Packing</button>
+        <button class="tab-button" style="color:#c2185b;" onclick="window.openTab('splitTab', this)">Split Delivery 📅</button>
         <button class="tab-button" onclick="window.openTab('todaySummary', this)">Today's Summary</button>
         <button class="tab-button" onclick="window.openTab('monthReport', this)">Monthly Report</button>
         <button class="tab-button" onclick="window.openTab('duePayments', this)">Due Payments</button>
@@ -226,7 +225,7 @@
                 <datalist id="orderNoList"></datalist>
 
                 <div class="form-group"><label>Order Date</label><input type="date" id="orderDate" required></div>
-                <div class="form-group"><label>Main Delivery Date</label><input type="date" id="deliveryDate" required></div>
+                <div class="form-group"><label>Estimated / Main Delivery Date</label><input type="date" id="deliveryDate" required></div>
                 <div class="form-group"><label>Delivery Time</label><input type="time" id="deliveryTime"></div>
             </div>
             <div class="form-row">
@@ -246,10 +245,9 @@
                 </div>
             </div>
 
-            <h3>📦 Box Configurations (Split Delivery Supported)</h3>
+            <h3>📦 Box Configurations</h3>
             <div id="boxContainer"></div>
             <button type="button" class="btn btn-primary" onclick="window.addBoxGroup()">+ Add New Box Group</button>
-            <p style="font-size:11px; color:#666;">Tip: For split delivery, add separate Box Groups and set their individual delivery dates.</p>
             <hr>
 
             <div class="form-row" style="margin-top: 20px; align-items: flex-end;">
@@ -286,6 +284,18 @@
 
             <button type="submit" class="btn btn-success">Save Order (Cloud)</button>
         </form>
+    </div>
+
+    <div id="splitTab" class="tab-content">
+        <h2>📅 Split Delivery & Quantity Manager</h2>
+        <div class="form-row filter-controls-screen" style="background:#fce4ec; padding:15px; border-radius:8px; border:1px solid #f8bbd0;">
+            <div class="form-group">
+                <label>Search Order / Customer</label>
+                <input type="text" id="splitSearchInput" placeholder="Name or Order No..." oninput="window.renderSplitManager()">
+            </div>
+        </div>
+        <p style="font-size:12px; color:#555;">Use this to split a large box group into smaller deliveries on different dates.</p>
+        <div id="splitResultsContainer" style="margin-top:20px;"></div>
     </div>
 
     <div id="productionTab" class="tab-content">
@@ -765,6 +775,7 @@
   function refreshCurrentTab() {
       if(document.getElementById('productionTab').style.display === 'block') window.renderProduction();
       if(document.getElementById('packingTab').style.display === 'block') window.renderPacking();
+      if(document.getElementById('splitTab').style.display === 'block') window.renderSplitManager();
       if(document.getElementById('todaySummary').style.display === 'block') window.renderSummary();
       if(document.getElementById('monthReport').style.display === 'block') window.renderMonthReports();
       if(document.getElementById('duePayments').style.display === 'block') window.renderDuePayments();
@@ -838,7 +849,7 @@
           PAYMENT_MODES.forEach(mode => sel.innerHTML += `<option value="${mode}">${mode}</option>`);
       });
       document.querySelectorAll('input[type="date"]').forEach(i => {
-          if(!i.id.includes('search') && !i.id.includes('dueDetail')) i.value = today;
+          if(!i.id.includes('search') && !i.id.includes('dueDetail') && !i.id.includes('split')) i.value = today;
       });
       document.getElementById('monthInput').value = new Date().toISOString().slice(0, 7);
       document.getElementById('incDate').value = today; 
@@ -855,16 +866,12 @@
       refreshCurrentTab();
   }
 
-  // --- ORDER LOGIC WITH SPLIT DELIVERY SUPPORT ---
+  // --- ORDER LOGIC ---
   window.addBoxGroup = (data = {}) => {
       const container = document.getElementById('boxContainer');
       const div = document.createElement('div');
       div.className = 'box-group-container';
       
-      // If editing an existing box group, it might have a specific date. 
-      // If it's new, leave blank (will default to main date later)
-      const groupDateVal = data.groupDelDate || '';
-
       div.innerHTML = `
           <div class="box-group-header">
               <div class="box-group-title">Box Configuration</div>
@@ -874,14 +881,6 @@
               <div class="form-group" style="flex:2"><label>Box Name</label><input type="text" class="group-name" value="${data.groupName || ''}" placeholder="e.g. Mix Box"></div>
               <div class="form-group"><label style="color:#d35400; font-weight:bold;">TOTAL BOXES</label><input type="number" class="group-qty" value="${data.groupQty || 1}" min="1" oninput="window.calculateGrandTotal()" style="border: 2px solid #d35400; font-weight:bold;"></div>
           </div>
-          <div class="form-row" style="background: #e1f5fe; padding: 0 10px 10px 10px; border-radius: 0 0 6px 6px;">
-              <div class="form-group">
-                 <label style="color:#2980b9;">Delivery Date (Split Delivery)</label>
-                 <input type="date" class="group-date" value="${groupDateVal}" title="Leave empty to use Main Delivery Date">
-                 <small style="font-size:10px; color:#666;">Leave empty to use Main Date</small>
-              </div>
-          </div>
-
           <div class="item-list-container">
               <div class="items-wrapper"></div>
               <button type="button" class="btn btn-sm btn-warning" style="margin-top:5px;" onclick="window.addItemToGroup(this)">+ Add Item</button>
@@ -930,7 +929,7 @@
       document.getElementById('balanceShow').value = (netTotal - adv).toFixed(2);
   }
 
-  // --- SAVE LOGIC (Captures split dates) ---
+  // --- SAVE LOGIC ---
   document.getElementById('orderForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       
@@ -968,8 +967,6 @@
           boxGroups.push({
               groupName: group.querySelector('.group-name').value || 'Un-named Box',
               groupQty: group.querySelector('.group-qty').value,
-              // CAPTURE THE SPLIT DATE
-              groupDelDate: group.querySelector('.group-date').value, 
               items: items
           });
       });
@@ -1079,7 +1076,133 @@
       }
   });
 
-  // --- PRODUCTION RENDER (UPDATED FOR SPLIT DATES) ---
+  // --- UPDATED: SPLIT DELIVERY & QUANTITY MANAGER LOGIC ---
+  window.renderSplitManager = () => {
+      const q = document.getElementById('splitSearchInput').value.toLowerCase();
+      const container = document.getElementById('splitResultsContainer');
+      container.innerHTML = '';
+      
+      if(q.length < 2) return; 
+
+      const matches = globalOrders.filter(o => 
+          o.cust.toLowerCase().includes(q) || 
+          o.no.toLowerCase().includes(q)
+      );
+
+      if(matches.length === 0) {
+          container.innerHTML = '<p style="color:#777;">No orders found.</p>';
+          return;
+      }
+
+      matches.forEach(o => {
+          const card = document.createElement('div');
+          card.style.cssText = "background:white; padding:15px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:15px; border-left:5px solid #c2185b;";
+          
+          let boxesHtml = `
+              <table style="width:100%; font-size:13px; margin-top:10px; border-collapse:collapse;">
+                  <thead style="background:#f0f0f0;">
+                      <tr>
+                          <th style="padding:5px; text-align:left;">Box Name</th>
+                          <th style="padding:5px; text-align:left;">Qty Available</th>
+                          <th style="padding:5px; text-align:left;">Current Date</th>
+                          <th style="padding:5px; text-align:left; border-left:2px solid #ddd; padding-left:10px;">Move Qty</th>
+                          <th style="padding:5px; text-align:left;">To New Date</th>
+                          <th style="padding:5px;">Action</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+          `;
+
+          o.boxGroups.forEach((bg, index) => {
+              const effectiveDate = bg.groupDelDate || o.delDate;
+              const dateDisplay = effectiveDate === o.delDate ? `${window.formatDate(effectiveDate)} (Main)` : `<span style="color:#c2185b; font-weight:bold;">${window.formatDate(effectiveDate)}</span>`;
+              
+              const qtyInputId = `qty-split-${o.id}-${index}`;
+              const dateInputId = `date-split-${o.id}-${index}`;
+
+              boxesHtml += `
+                  <tr>
+                      <td style="padding:8px; border-bottom:1px solid #eee;">${bg.groupName}</td>
+                      <td style="padding:8px; border-bottom:1px solid #eee; font-weight:bold;">${bg.groupQty}</td>
+                      <td style="padding:8px; border-bottom:1px solid #eee;">${dateDisplay}</td>
+                      
+                      <td style="padding:8px; border-bottom:1px solid #eee; border-left:2px solid #ddd; padding-left:10px;">
+                          <input type="number" id="${qtyInputId}" placeholder="Qty" style="width:60px; padding:5px;" max="${bg.groupQty}">
+                      </td>
+                      <td style="padding:8px; border-bottom:1px solid #eee;">
+                          <input type="date" id="${dateInputId}" style="width:110px; padding:5px;">
+                      </td>
+                      <td style="padding:8px; border-bottom:1px solid #eee;">
+                          <button class="btn btn-sm btn-primary" onclick="window.splitOrderGroup('${o.id}', ${index}, '${qtyInputId}', '${dateInputId}')">Separate/Split</button>
+                      </td>
+                  </tr>
+              `;
+          });
+          boxesHtml += '</tbody></table>';
+
+          card.innerHTML = `
+              <div style="display:flex; justify-content:space-between;">
+                  <h3 style="margin:0;">${o.cust} <span style="font-size:12px; color:#555;">(Order #${o.no})</span></h3>
+                  <span>Main Delivery: <b>${window.formatDate(o.delDate)}</b></span>
+              </div>
+              ${boxesHtml}
+          `;
+          container.appendChild(card);
+      });
+  }
+
+  // --- LOGIC TO SPLIT BOX QUANTITY ---
+  window.splitOrderGroup = async (orderId, groupIndex, qtyId, dateId) => {
+      const splitQty = parseFloat(document.getElementById(qtyId).value);
+      const splitDate = document.getElementById(dateId).value;
+      
+      if(!splitQty || splitQty <= 0) return alert("Please enter valid Quantity to move.");
+      if(!splitDate) return alert("Please select a New Date.");
+
+      const order = globalOrders.find(o => o.id === orderId);
+      if(!order) return;
+
+      const updatedBoxGroups = [...order.boxGroups];
+      const targetGroup = updatedBoxGroups[groupIndex];
+      const currentQty = parseFloat(targetGroup.groupQty);
+
+      if(splitQty > currentQty) return alert(`Cannot move ${splitQty}. Only ${currentQty} available.`);
+      
+      // If moving everything, just update the date
+      if(splitQty === currentQty) {
+          if(confirm("Moving ALL items to new date?")) {
+              targetGroup.groupDelDate = splitDate;
+          } else return;
+      } else {
+          // SPLIT LOGIC:
+          // 1. Reduce quantity of original group
+          targetGroup.groupQty = currentQty - splitQty;
+          
+          // 2. Create NEW group with split quantity and new date
+          const newGroup = {
+              groupName: targetGroup.groupName,
+              groupQty: splitQty,
+              groupDelDate: splitDate,
+              items: [...targetGroup.items] // Copy items
+          };
+          
+          // 3. Add to array
+          updatedBoxGroups.push(newGroup);
+      }
+
+      try {
+          await updateDoc(doc(db, "orders", orderId), {
+              boxGroups: updatedBoxGroups
+          });
+          alert("✅ Order Split Successfully!");
+          window.renderSplitManager(); // Refresh view
+      } catch(err) {
+          alert("Error updating: " + err.message);
+      }
+  }
+
+
+  // --- PRODUCTION RENDER ---
   window.renderProduction = () => {
       const date = document.getElementById('prodDateFilter').value;
       const search = document.getElementById('prodSearchFilter').value.toLowerCase();
@@ -1090,10 +1213,8 @@
       
       const prodSummary = {}; 
 
-      // Iterate ALL orders, but check individual box groups for date matching
       globalOrders.forEach(o => {
           o.boxGroups.forEach(bg => {
-              // Priority: Group Date -> Main Order Date
               const effectiveDate = bg.groupDelDate || o.delDate;
 
               if(effectiveDate === date) {
@@ -1121,13 +1242,12 @@
       }
   }
 
-  // --- PACKING RENDER (UPDATED FOR SPLIT DATES) ---
+  // --- PACKING RENDER ---
   window.renderPacking = () => {
       const date = document.getElementById('packDateFilter').value;
       const search = document.getElementById('packSearchFilter').value.toLowerCase();
       document.getElementById('printDatePack').textContent = "Packing Date: " + window.formatDate(date);
       
-      // Sort orders by time
       let orders = [...globalOrders].sort((a,b) => (a.delTime||'').localeCompare(b.delTime||''));
       const tbody = document.querySelector('#packingTable tbody');
       tbody.innerHTML = '';
@@ -1153,7 +1273,6 @@
               }
           });
 
-          // Only render row if this order has boxes for TODAY
           if(boxGroupsForToday > 0) {
               hasEntries = true;
               tbody.innerHTML += `<tr><td>${window.formatAMPM(o.delTime)}</td><td><b>${o.cust}</b><br>${o.mobile}</td><td>${detailsHtml}</td><td>${o.note || ''}</td></tr>`;
