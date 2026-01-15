@@ -87,6 +87,7 @@
         .btn-primary { background-color: #3498db; color: white; }
         .btn-warning { background-color: #f39c12; color: white; }
         .btn-danger { background-color: #e74c3c; color: white; }
+        .btn-dark { background-color: #34495e; color: white; }
         .btn-logout { background-color: #34495e; color: white; float: right; margin-top: -60px; }
         .btn-sm { padding: 5px 10px; font-size: 12px; }
 
@@ -209,7 +210,8 @@
         <button class="tab-button" onclick="window.openTab('productionTab', this)">Production</button>
         <button class="tab-button" onclick="window.openTab('packingTab', this)">Packing</button>
         <button class="tab-button" style="color:#c2185b;" onclick="window.openTab('splitTab', this)">Split Delivery 📅</button>
-        <button class="tab-button" style="color:#006064;" onclick="window.openTab('masterSummaryTab', this)">Delivery Schedule 📋</button> <button class="tab-button" onclick="window.openTab('todaySummary', this)">Today's Summary</button>
+        <button class="tab-button" style="color:#006064;" onclick="window.openTab('masterSummaryTab', this)">Delivery Schedule 📋</button>
+        <button class="tab-button" onclick="window.openTab('todaySummary', this)">Today's Summary</button>
         <button class="tab-button" onclick="window.openTab('monthReport', this)">Monthly Report</button>
         <button class="tab-button" onclick="window.openTab('duePayments', this)">Due Payments</button>
         <button class="tab-button" onclick="window.openTab('allOrders', this)">All Orders</button>
@@ -289,7 +291,7 @@
     </div>
 
     <div id="masterSummaryTab" class="tab-content">
-        <h2>📋 Delivery Schedule & Order Summary</h2>
+        <h2>📋 Delivery Schedule & Status</h2>
         <div class="form-row filter-controls-screen" style="background:#e0f7fa; padding:15px; border-radius:8px; border:1px solid #b2ebf2;">
             <div class="form-group">
                 <label>Filter by Delivery Date (Empty for All)</label>
@@ -312,14 +314,14 @@
                         <th style="width:15%">Date & Time</th>
                         <th style="width:10%">Order No</th>
                         <th style="width:20%">Customer</th>
-                        <th style="width:40%">Delivery Details (Boxes)</th>
-                        <th style="width:15%">Status</th>
+                        <th style="width:30%">Delivery Details (Boxes)</th>
+                        <th style="width:25%">Status / Action</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
             </table>
         </div>
-        <p style="font-size:11px; color:#666; margin-top:10px;">* Note: Orders with split delivery will appear as separate rows for each date.</p>
+        <p style="font-size:11px; color:#666; margin-top:10px;">* Note: 'Delivered' or 'Cancelled' items will be hidden from Production/Packing lists.</p>
     </div>
 
     <div id="splitTab" class="tab-content">
@@ -1004,7 +1006,8 @@
           boxGroups.push({
               groupName: group.querySelector('.group-name').value || 'Un-named Box',
               groupQty: group.querySelector('.group-qty').value,
-              items: items
+              items: items,
+              status: 'Pending' // Initial Status
           });
       });
 
@@ -1113,7 +1116,7 @@
       }
   });
 
-  // --- NEW: MASTER SUMMARY LOGIC ---
+  // --- MASTER SUMMARY (SCHEDULE) LOGIC ---
   window.renderMasterSummary = () => {
       const dateFilter = document.getElementById('masterDateFilter').value;
       const searchFilter = document.getElementById('masterSearch').value.toLowerCase();
@@ -1122,11 +1125,12 @@
       
       document.getElementById('printDateMaster').innerText = dateFilter ? "Schedule for: " + window.formatDate(dateFilter) : "Master Delivery Schedule (All)";
 
-      // Flatten all box groups into delivery events
       let allEvents = [];
       globalOrders.forEach(o => {
-          o.boxGroups.forEach(bg => {
+          o.boxGroups.forEach((bg, index) => {
               allEvents.push({
+                  orderId: o.id,
+                  groupIndex: index,
                   date: bg.groupDelDate || o.delDate,
                   time: bg.groupDelTime || o.delTime || '',
                   orderNo: o.no,
@@ -1134,12 +1138,12 @@
                   mobile: o.mobile,
                   groupName: bg.groupName,
                   qty: bg.groupQty,
-                  items: bg.items
+                  items: bg.items,
+                  status: bg.status || 'Pending'
               });
           });
       });
 
-      // Filter
       const filteredEvents = allEvents.filter(ev => {
           if(dateFilter && ev.date !== dateFilter) return false;
           if(searchFilter) {
@@ -1149,9 +1153,11 @@
           return true;
       });
 
-      // Sort by Date then Time
+      // Sort: Pending first, then by date/time
       filteredEvents.sort((a,b) => {
-          if(a.date !== b.date) return a.date.localeCompare(b.date);
+          if (a.status === 'Pending' && b.status !== 'Pending') return -1;
+          if (a.status !== 'Pending' && b.status === 'Pending') return 1;
+          if (a.date !== b.date) return a.date.localeCompare(b.date);
           return a.time.localeCompare(b.time);
       });
 
@@ -1161,14 +1167,28 @@
       }
 
       filteredEvents.forEach(ev => {
-          const isPast = ev.date < today;
-          const status = isPast ? '<span style="color:green; font-weight:bold;">✅ Delivered</span>' : '<span style="color:red; font-weight:bold;">⏳ Pending</span>';
           const timeDisplay = ev.time ? window.formatAMPM(ev.time) : '--';
-          
           let itemsList = ev.items.map(i => `${i.name} (${i.qty})`).join(', ');
+          
+          let actionHtml = '';
+          let rowStyle = '';
+
+          if (ev.status === 'Delivered') {
+              actionHtml = '<span style="color:green; font-weight:bold;">✅ Delivered</span>';
+              rowStyle = 'background:#e8f5e9;';
+          } else if (ev.status === 'Cancelled') {
+              actionHtml = '<span style="color:red; font-weight:bold;">🚫 Cancelled</span>';
+              rowStyle = 'background:#ffebee; color:#999; text-decoration:line-through;';
+          } else {
+              // Pending
+              actionHtml = `
+                  <button class="btn btn-sm btn-success" onclick="window.updateGroupStatus('${ev.orderId}', ${ev.groupIndex}, 'Delivered')">✅ Deliver</button>
+                  <button class="btn btn-sm btn-danger" onclick="window.updateGroupStatus('${ev.orderId}', ${ev.groupIndex}, 'Cancelled')">🚫 Cancel</button>
+              `;
+          }
 
           tbody.innerHTML += `
-              <tr style="${isPast ? 'background:#f9f9f9; color:#777;' : ''}">
+              <tr style="${rowStyle}">
                   <td><b>${window.formatDate(ev.date)}</b><br><small>${timeDisplay}</small></td>
                   <td>#${ev.orderNo}</td>
                   <td><b>${ev.cust}</b><br><small>${ev.mobile}</small></td>
@@ -1176,13 +1196,31 @@
                       <div style="font-weight:bold;">${ev.qty} x ${ev.groupName}</div>
                       <div style="font-size:11px; color:#555;">${itemsList}</div>
                   </td>
-                  <td>${status}</td>
+                  <td class="filter-controls-screen">${actionHtml}</td>
               </tr>
           `;
       });
   }
 
-  // --- SPLIT MANAGER LOGIC (Keep existing features) ---
+  // --- UPDATE GROUP STATUS (DELIVER/CANCEL) ---
+  window.updateGroupStatus = async (orderId, groupIndex, newStatus) => {
+      const confirmation = newStatus === 'Cancelled' ? "⚠️ Cancel this delivery item? It will be removed from production." : "✅ Mark as Delivered?";
+      if(!confirm(confirmation)) return;
+
+      const order = globalOrders.find(o => o.id === orderId);
+      if(!order) return;
+
+      const updatedBoxGroups = [...order.boxGroups];
+      updatedBoxGroups[groupIndex].status = newStatus;
+
+      try {
+          await updateDoc(doc(db, "orders", orderId), { boxGroups: updatedBoxGroups });
+          // No alert needed for speed, just refresh
+          refreshCurrentTab(); 
+      } catch(err) { alert("Error: " + err.message); }
+  }
+
+  // --- SPLIT MANAGER LOGIC ---
   window.renderSplitManager = () => {
       const q = document.getElementById('splitSearchInput').value.toLowerCase();
       const container = document.getElementById('splitResultsContainer');
@@ -1208,10 +1246,10 @@
           o.boxGroups.forEach(bg => {
              const q = parseFloat(bg.groupQty) || 0;
              totalQty += q;
-             const dDate = bg.groupDelDate || o.delDate;
-             if(dDate < today) {
+             // Check explicit status OR date fallback
+             if(bg.status === 'Delivered' || (bg.status !== 'Cancelled' && (bg.groupDelDate || o.delDate) < today)) {
                  deliveredQty += q;
-             } else {
+             } else if(bg.status !== 'Cancelled') {
                  pendingQty += q;
              }
           });
@@ -1234,12 +1272,18 @@
           `;
 
           o.boxGroups.forEach((bg, index) => {
+              // Skip rendering if Cancelled/Delivered? No, show all but style them
               const effectiveDate = bg.groupDelDate || o.delDate;
               const effectiveTime = bg.groupDelTime || ''; 
               
-              const isPast = effectiveDate < today;
-              const rowStyle = isPast ? 'background:#e8f5e9;' : '';
-              const dateColor = isPast ? '#2e7d32' : '#c62828';
+              const isDelivered = bg.status === 'Delivered';
+              const isCancelled = bg.status === 'Cancelled';
+              
+              let rowStyle = '';
+              let statusLabel = '';
+
+              if(isDelivered) { rowStyle = 'background:#e8f5e9;'; statusLabel = '(Delivered)'; }
+              if(isCancelled) { rowStyle = 'background:#ffebee; opacity:0.6;'; statusLabel = '(Cancelled)'; }
               
               const qtyInputId = `qty-split-${o.id}-${index}`;
               const splitDateInputId = `date-split-${o.id}-${index}`;
@@ -1248,28 +1292,31 @@
               const updateDateInputId = `date-update-${o.id}-${index}`;
               const updateTimeInputId = `time-update-${o.id}-${index}`;
 
+              // Disable inputs if cancelled/delivered
+              const disabledAttr = (isDelivered || isCancelled) ? 'disabled' : '';
+
               boxesHtml += `
                   <tr style="${rowStyle}">
                       <td style="padding:8px; border-bottom:1px solid #eee;">
-                          <b>${bg.groupName}</b><br>
-                          <span style="font-size:14px; font-weight:bold; color:${dateColor};">Qty: ${bg.groupQty}</span>
+                          <b>${bg.groupName}</b> <small>${statusLabel}</small><br>
+                          <span style="font-size:14px; font-weight:bold;">Qty: ${bg.groupQty}</span>
                       </td>
                       <td style="padding:8px; border-bottom:1px solid #eee;">
-                          <input type="date" id="${updateDateInputId}" value="${effectiveDate}" style="width:100px; font-size:11px;">
-                          <input type="time" id="${updateTimeInputId}" value="${effectiveTime}" style="width:80px; font-size:11px;">
-                          <button class="btn btn-sm btn-primary" onclick="window.updateSplitDate('${o.id}', ${index}, '${updateDateInputId}', '${updateTimeInputId}')">Update</button>
+                          <input type="date" id="${updateDateInputId}" value="${effectiveDate}" style="width:100px; font-size:11px;" ${disabledAttr}>
+                          <input type="time" id="${updateTimeInputId}" value="${effectiveTime}" style="width:80px; font-size:11px;" ${disabledAttr}>
+                          <button class="btn btn-sm btn-primary" onclick="window.updateSplitDate('${o.id}', ${index}, '${updateDateInputId}', '${updateTimeInputId}')" ${disabledAttr}>Update</button>
                       </td>
                       
                       <td style="padding:8px; border-bottom:1px solid #eee; border-left:2px solid #ddd; padding-left:10px;">
-                          <input type="number" id="${qtyInputId}" placeholder="Qty" style="width:50px; padding:5px;" max="${bg.groupQty}">
+                          <input type="number" id="${qtyInputId}" placeholder="Qty" style="width:50px; padding:5px;" max="${bg.groupQty}" ${disabledAttr}>
                       </td>
                       <td style="padding:8px; border-bottom:1px solid #eee;">
-                          <input type="date" id="${splitDateInputId}" style="width:100px; padding:5px; font-size:11px;">
-                          <input type="time" id="${splitTimeInputId}" style="width:80px; padding:5px; font-size:11px;">
+                          <input type="date" id="${splitDateInputId}" style="width:100px; padding:5px; font-size:11px;" ${disabledAttr}>
+                          <input type="time" id="${splitTimeInputId}" style="width:80px; padding:5px; font-size:11px;" ${disabledAttr}>
                       </td>
                       <td style="padding:8px; border-bottom:1px solid #eee;">
-                          <button class="btn btn-sm btn-warning" onclick="window.splitOrderGroup('${o.id}', ${index}, '${qtyInputId}', '${splitDateInputId}', '${splitTimeInputId}')">Split</button>
-                          <button class="btn btn-sm btn-danger" onclick="window.deleteSplitGroup('${o.id}', ${index})">❌</button>
+                          <button class="btn btn-sm btn-warning" onclick="window.splitOrderGroup('${o.id}', ${index}, '${qtyInputId}', '${splitDateInputId}', '${splitTimeInputId}')" ${disabledAttr}>Split</button>
+                          ${!isCancelled ? `<button class="btn btn-sm btn-danger" onclick="window.updateGroupStatus('${o.id}', ${index}, 'Cancelled')">❌</button>` : ''}
                       </td>
                   </tr>
               `;
@@ -1321,36 +1368,6 @@
       } catch(err) { alert("Error: " + err.message); }
   }
 
-  // --- LOGIC: DELETE SPLIT GROUP ---
-  window.deleteSplitGroup = async (orderId, groupIndex) => {
-      if(!confirm("⚠️ Are you sure you want to DELETE this box group?\n\nThis will remove the items and Reduce the Total Bill Amount.")) return;
-      
-      const order = globalOrders.find(o => o.id === orderId);
-      if(!order) return;
-
-      const updatedBoxGroups = [...order.boxGroups];
-      updatedBoxGroups.splice(groupIndex, 1);
-
-      let newSubTotal = 0;
-      updatedBoxGroups.forEach(g => {
-          let gCost = 0;
-          g.items.forEach(i => gCost += (parseFloat(i.qty||0) * parseFloat(i.rate||0)));
-          newSubTotal += (gCost * parseFloat(g.groupQty||0));
-      });
-      
-      const newTotal = newSubTotal - (parseFloat(order.discount)||0);
-
-      try {
-          await updateDoc(doc(db, "orders", orderId), { 
-              boxGroups: updatedBoxGroups,
-              subTotal: newSubTotal,
-              total: newTotal
-          });
-          alert("✅ Group Deleted. Bill Total updated.");
-          window.renderSplitManager();
-      } catch(err) { alert("Error: " + err.message); }
-  }
-
   // --- LOGIC TO SPLIT BOX QUANTITY (WITH TIME) ---
   window.splitOrderGroup = async (orderId, groupIndex, qtyId, dateId, timeId) => {
       const splitQty = parseFloat(document.getElementById(qtyId).value);
@@ -1382,7 +1399,8 @@
               groupQty: splitQty,
               groupDelDate: splitDate,
               groupDelTime: splitTime,
-              items: [...targetGroup.items]
+              items: [...targetGroup.items],
+              status: 'Pending'
           };
           updatedBoxGroups.push(newGroup);
       }
@@ -1399,7 +1417,7 @@
   }
 
 
-  // --- PRODUCTION RENDER ---
+  // --- PRODUCTION RENDER (Filter Cancelled/Delivered) ---
   window.renderProduction = () => {
       const date = document.getElementById('prodDateFilter').value;
       const search = document.getElementById('prodSearchFilter').value.toLowerCase();
@@ -1412,6 +1430,8 @@
 
       globalOrders.forEach(o => {
           o.boxGroups.forEach(bg => {
+              if(bg.status === 'Cancelled' || bg.status === 'Delivered') return; // Skip these
+
               const effectiveDate = bg.groupDelDate || o.delDate;
 
               if(effectiveDate === date) {
@@ -1439,7 +1459,7 @@
       }
   }
 
-  // --- PACKING RENDER ---
+  // --- PACKING RENDER (Filter Cancelled/Delivered) ---
   window.renderPacking = () => {
       const date = document.getElementById('packDateFilter').value;
       const search = document.getElementById('packSearchFilter').value.toLowerCase();
@@ -1458,6 +1478,8 @@
           let boxGroupsForToday = 0;
 
           o.boxGroups.forEach(bg => {
+              if(bg.status === 'Cancelled' || bg.status === 'Delivered') return; // Skip
+
               const effectiveDate = bg.groupDelDate || o.delDate;
               
               if(effectiveDate === date) {
@@ -1481,7 +1503,7 @@
       if(!hasEntries) tbody.innerHTML = '<tr><td colspan="4">No packing tasks for this date.</td></tr>';
   }
 
-  // --- SUMMARY RENDER (Existing) ---
+  // --- SUMMARY RENDER ---
   window.renderSummary = () => {
       const date = document.getElementById('summaryDateFilter').value;
       document.getElementById('printDateSum').textContent = "Summary Date: " + window.formatDate(date);
