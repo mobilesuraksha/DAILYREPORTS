@@ -40,6 +40,8 @@
         .tab-button[onclick*="packingTab"].active { background-color: #2e7d32; color: white; }
         .tab-button[onclick*="splitTab"] { background-color: #fce4ec; color: #c2185b; }
         .tab-button[onclick*="splitTab"].active { background-color: #c2185b; color: white; }
+        .tab-button[onclick*="masterSummaryTab"] { background-color: #e0f7fa; color: #006064; }
+        .tab-button[onclick*="masterSummaryTab"].active { background-color: #006064; color: white; }
 
         .tab-content { display: none; animation: fadeIn 0.5s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -207,7 +209,7 @@
         <button class="tab-button" onclick="window.openTab('productionTab', this)">Production</button>
         <button class="tab-button" onclick="window.openTab('packingTab', this)">Packing</button>
         <button class="tab-button" style="color:#c2185b;" onclick="window.openTab('splitTab', this)">Split Delivery 📅</button>
-        <button class="tab-button" onclick="window.openTab('todaySummary', this)">Today's Summary</button>
+        <button class="tab-button" style="color:#006064;" onclick="window.openTab('masterSummaryTab', this)">Delivery Schedule 📋</button> <button class="tab-button" onclick="window.openTab('todaySummary', this)">Today's Summary</button>
         <button class="tab-button" onclick="window.openTab('monthReport', this)">Monthly Report</button>
         <button class="tab-button" onclick="window.openTab('duePayments', this)">Due Payments</button>
         <button class="tab-button" onclick="window.openTab('allOrders', this)">All Orders</button>
@@ -284,6 +286,40 @@
 
             <button type="submit" class="btn btn-success">Save Order (Cloud)</button>
         </form>
+    </div>
+
+    <div id="masterSummaryTab" class="tab-content">
+        <h2>📋 Delivery Schedule & Order Summary</h2>
+        <div class="form-row filter-controls-screen" style="background:#e0f7fa; padding:15px; border-radius:8px; border:1px solid #b2ebf2;">
+            <div class="form-group">
+                <label>Filter by Delivery Date (Empty for All)</label>
+                <input type="date" id="masterDateFilter" onchange="window.renderMasterSummary()">
+            </div>
+            <div class="form-group">
+                <label>Search (Customer, Order No)</label>
+                <input type="text" id="masterSearch" placeholder="Name or Order#..." oninput="window.renderMasterSummary()">
+            </div>
+            <div class="form-group" style="align-self: flex-end;">
+                <button class="btn btn-primary" onclick="window.print()">Print Schedule</button>
+            </div>
+        </div>
+        
+        <div class="print-header-date" id="printDateMaster"></div>
+        <div class="table-responsive">
+            <table class="data-table" id="masterTable">
+                <thead>
+                    <tr>
+                        <th style="width:15%">Date & Time</th>
+                        <th style="width:10%">Order No</th>
+                        <th style="width:20%">Customer</th>
+                        <th style="width:40%">Delivery Details (Boxes)</th>
+                        <th style="width:15%">Status</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <p style="font-size:11px; color:#666; margin-top:10px;">* Note: Orders with split delivery will appear as separate rows for each date.</p>
     </div>
 
     <div id="splitTab" class="tab-content">
@@ -776,6 +812,7 @@
       if(document.getElementById('productionTab').style.display === 'block') window.renderProduction();
       if(document.getElementById('packingTab').style.display === 'block') window.renderPacking();
       if(document.getElementById('splitTab').style.display === 'block') window.renderSplitManager();
+      if(document.getElementById('masterSummaryTab').style.display === 'block') window.renderMasterSummary();
       if(document.getElementById('todaySummary').style.display === 'block') window.renderSummary();
       if(document.getElementById('monthReport').style.display === 'block') window.renderMonthReports();
       if(document.getElementById('duePayments').style.display === 'block') window.renderDuePayments();
@@ -849,7 +886,7 @@
           PAYMENT_MODES.forEach(mode => sel.innerHTML += `<option value="${mode}">${mode}</option>`);
       });
       document.querySelectorAll('input[type="date"]').forEach(i => {
-          if(!i.id.includes('search') && !i.id.includes('dueDetail') && !i.id.includes('split')) i.value = today;
+          if(!i.id.includes('search') && !i.id.includes('dueDetail') && !i.id.includes('split') && !i.id.includes('master')) i.value = today;
       });
       document.getElementById('monthInput').value = new Date().toISOString().slice(0, 7);
       document.getElementById('incDate').value = today; 
@@ -1076,7 +1113,76 @@
       }
   });
 
-  // --- UPDATED: SPLIT DELIVERY, QUANTITY, TIME & PENDING STATUS ---
+  // --- NEW: MASTER SUMMARY LOGIC ---
+  window.renderMasterSummary = () => {
+      const dateFilter = document.getElementById('masterDateFilter').value;
+      const searchFilter = document.getElementById('masterSearch').value.toLowerCase();
+      const tbody = document.querySelector('#masterTable tbody');
+      tbody.innerHTML = '';
+      
+      document.getElementById('printDateMaster').innerText = dateFilter ? "Schedule for: " + window.formatDate(dateFilter) : "Master Delivery Schedule (All)";
+
+      // Flatten all box groups into delivery events
+      let allEvents = [];
+      globalOrders.forEach(o => {
+          o.boxGroups.forEach(bg => {
+              allEvents.push({
+                  date: bg.groupDelDate || o.delDate,
+                  time: bg.groupDelTime || o.delTime || '',
+                  orderNo: o.no,
+                  cust: o.cust,
+                  mobile: o.mobile,
+                  groupName: bg.groupName,
+                  qty: bg.groupQty,
+                  items: bg.items
+              });
+          });
+      });
+
+      // Filter
+      const filteredEvents = allEvents.filter(ev => {
+          if(dateFilter && ev.date !== dateFilter) return false;
+          if(searchFilter) {
+              return ev.cust.toLowerCase().includes(searchFilter) || 
+                     ev.orderNo.toLowerCase().includes(searchFilter);
+          }
+          return true;
+      });
+
+      // Sort by Date then Time
+      filteredEvents.sort((a,b) => {
+          if(a.date !== b.date) return a.date.localeCompare(b.date);
+          return a.time.localeCompare(b.time);
+      });
+
+      if(filteredEvents.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No deliveries found for selection.</td></tr>';
+          return;
+      }
+
+      filteredEvents.forEach(ev => {
+          const isPast = ev.date < today;
+          const status = isPast ? '<span style="color:green; font-weight:bold;">✅ Delivered</span>' : '<span style="color:red; font-weight:bold;">⏳ Pending</span>';
+          const timeDisplay = ev.time ? window.formatAMPM(ev.time) : '--';
+          
+          let itemsList = ev.items.map(i => `${i.name} (${i.qty})`).join(', ');
+
+          tbody.innerHTML += `
+              <tr style="${isPast ? 'background:#f9f9f9; color:#777;' : ''}">
+                  <td><b>${window.formatDate(ev.date)}</b><br><small>${timeDisplay}</small></td>
+                  <td>#${ev.orderNo}</td>
+                  <td><b>${ev.cust}</b><br><small>${ev.mobile}</small></td>
+                  <td>
+                      <div style="font-weight:bold;">${ev.qty} x ${ev.groupName}</div>
+                      <div style="font-size:11px; color:#555;">${itemsList}</div>
+                  </td>
+                  <td>${status}</td>
+              </tr>
+          `;
+      });
+  }
+
+  // --- SPLIT MANAGER LOGIC (Keep existing features) ---
   window.renderSplitManager = () => {
       const q = document.getElementById('splitSearchInput').value.toLowerCase();
       const container = document.getElementById('splitResultsContainer');
@@ -1095,7 +1201,6 @@
       }
 
       matches.forEach(o => {
-          // --- CALCULATE PENDING STATUS ---
           let totalQty = 0;
           let pendingQty = 0;
           let deliveredQty = 0;
@@ -1111,7 +1216,6 @@
              }
           });
 
-          // --- CARD RENDER ---
           const card = document.createElement('div');
           card.style.cssText = "background:white; padding:15px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:15px; border-left:5px solid #c2185b;";
           
@@ -1134,7 +1238,7 @@
               const effectiveTime = bg.groupDelTime || ''; 
               
               const isPast = effectiveDate < today;
-              const rowStyle = isPast ? 'background:#e8f5e9;' : ''; // Green tint for delivered
+              const rowStyle = isPast ? 'background:#e8f5e9;' : '';
               const dateColor = isPast ? '#2e7d32' : '#c62828';
               
               const qtyInputId = `qty-split-${o.id}-${index}`;
@@ -1178,7 +1282,6 @@
                       <h3 style="margin:0;">${o.cust} <span style="font-size:12px; color:#555;">(Order #${o.no})</span></h3>
                       <span style="font-size:12px; color:#555;">Mobile: ${o.mobile}</span>
                   </div>
-                  
                   <div style="display:flex; gap:10px;">
                       <div style="text-align:center; padding:5px 10px; background:#e3f2fd; border-radius:5px;">
                           <small>📦 Total</small><br><b>${totalQty}</b>
@@ -1209,7 +1312,7 @@
       
       const updatedBoxGroups = [...order.boxGroups];
       updatedBoxGroups[groupIndex].groupDelDate = newDate;
-      updatedBoxGroups[groupIndex].groupDelTime = newTime; // Save time
+      updatedBoxGroups[groupIndex].groupDelTime = newTime; 
 
       try {
           await updateDoc(doc(db, "orders", orderId), { boxGroups: updatedBoxGroups });
@@ -1228,7 +1331,6 @@
       const updatedBoxGroups = [...order.boxGroups];
       updatedBoxGroups.splice(groupIndex, 1);
 
-      // Recalculate Totals
       let newSubTotal = 0;
       updatedBoxGroups.forEach(g => {
           let gCost = 0;
@@ -1273,7 +1375,6 @@
               targetGroup.groupDelTime = splitTime;
           } else return;
       } else {
-          // SPLIT LOGIC
           targetGroup.groupQty = currentQty - splitQty;
           
           const newGroup = {
@@ -1338,7 +1439,7 @@
       }
   }
 
-  // --- PACKING RENDER (Shows Time) ---
+  // --- PACKING RENDER ---
   window.renderPacking = () => {
       const date = document.getElementById('packDateFilter').value;
       const search = document.getElementById('packSearchFilter').value.toLowerCase();
@@ -1362,8 +1463,6 @@
               if(effectiveDate === date) {
                   boxGroupsForToday++;
                   let itemsList = bg.items.map(i => `${i.name} (${i.qty}) ${i.remark ? '<span style="color:red">['+i.remark+']</span>':''}`).join(', ');
-                  
-                  // Show specific time if exists
                   const timeDisplay = bg.groupDelTime ? ` <span style="color:#d35400; font-weight:bold; background:#fff3e0; padding:2px; border-radius:4px;">(@ ${window.formatAMPM(bg.groupDelTime)})</span>` : '';
                   
                   detailsHtml += `<div style="border-bottom:1px dashed #ccc; padding:3px 0;">
@@ -1382,7 +1481,7 @@
       if(!hasEntries) tbody.innerHTML = '<tr><td colspan="4">No packing tasks for this date.</td></tr>';
   }
 
-  // --- SUMMARY RENDER ---
+  // --- SUMMARY RENDER (Existing) ---
   window.renderSummary = () => {
       const date = document.getElementById('summaryDateFilter').value;
       document.getElementById('printDateSum').textContent = "Summary Date: " + window.formatDate(date);
