@@ -287,14 +287,14 @@
     </div>
 
     <div id="splitTab" class="tab-content">
-        <h2>📅 Split Delivery, Quantity & Time Manager</h2>
+        <h2>📅 Delivery Status & Split Manager</h2>
         <div class="form-row filter-controls-screen" style="background:#fce4ec; padding:15px; border-radius:8px; border:1px solid #f8bbd0;">
             <div class="form-group">
                 <label>Search Order / Customer</label>
                 <input type="text" id="splitSearchInput" placeholder="Name or Order No..." oninput="window.renderSplitManager()">
             </div>
         </div>
-        <p style="font-size:12px; color:#555;">Use this to split a large box group, update dates/times, or delete extra boxes.</p>
+        <p style="font-size:12px; color:#555;">Check Pending Status, Split Deliveries, or Update Dates.</p>
         <div id="splitResultsContainer" style="margin-top:20px;"></div>
     </div>
 
@@ -1076,7 +1076,7 @@
       }
   });
 
-  // --- UPDATED: SPLIT DELIVERY, QUANTITY & TIME MANAGER ---
+  // --- UPDATED: SPLIT DELIVERY, QUANTITY, TIME & PENDING STATUS ---
   window.renderSplitManager = () => {
       const q = document.getElementById('splitSearchInput').value.toLowerCase();
       const container = document.getElementById('splitResultsContainer');
@@ -1095,6 +1095,23 @@
       }
 
       matches.forEach(o => {
+          // --- CALCULATE PENDING STATUS ---
+          let totalQty = 0;
+          let pendingQty = 0;
+          let deliveredQty = 0;
+
+          o.boxGroups.forEach(bg => {
+             const q = parseFloat(bg.groupQty) || 0;
+             totalQty += q;
+             const dDate = bg.groupDelDate || o.delDate;
+             if(dDate < today) {
+                 deliveredQty += q;
+             } else {
+                 pendingQty += q;
+             }
+          });
+
+          // --- CARD RENDER ---
           const card = document.createElement('div');
           card.style.cssText = "background:white; padding:15px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:15px; border-left:5px solid #c2185b;";
           
@@ -1114,7 +1131,11 @@
 
           o.boxGroups.forEach((bg, index) => {
               const effectiveDate = bg.groupDelDate || o.delDate;
-              const effectiveTime = bg.groupDelTime || ''; // Specific box time
+              const effectiveTime = bg.groupDelTime || ''; 
+              
+              const isPast = effectiveDate < today;
+              const rowStyle = isPast ? 'background:#e8f5e9;' : ''; // Green tint for delivered
+              const dateColor = isPast ? '#2e7d32' : '#c62828';
               
               const qtyInputId = `qty-split-${o.id}-${index}`;
               const splitDateInputId = `date-split-${o.id}-${index}`;
@@ -1124,10 +1145,10 @@
               const updateTimeInputId = `time-update-${o.id}-${index}`;
 
               boxesHtml += `
-                  <tr>
+                  <tr style="${rowStyle}">
                       <td style="padding:8px; border-bottom:1px solid #eee;">
                           <b>${bg.groupName}</b><br>
-                          <span style="font-size:14px; color:#d35400;">Qty: ${bg.groupQty}</span>
+                          <span style="font-size:14px; font-weight:bold; color:${dateColor};">Qty: ${bg.groupQty}</span>
                       </td>
                       <td style="padding:8px; border-bottom:1px solid #eee;">
                           <input type="date" id="${updateDateInputId}" value="${effectiveDate}" style="width:100px; font-size:11px;">
@@ -1152,9 +1173,23 @@
           boxesHtml += '</tbody></table>';
 
           card.innerHTML = `
-              <div style="display:flex; justify-content:space-between;">
-                  <h3 style="margin:0;">${o.cust} <span style="font-size:12px; color:#555;">(Order #${o.no})</span></h3>
-                  <span>Main Delivery: <b>${window.formatDate(o.delDate)}</b></span>
+              <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+                  <div>
+                      <h3 style="margin:0;">${o.cust} <span style="font-size:12px; color:#555;">(Order #${o.no})</span></h3>
+                      <span style="font-size:12px; color:#555;">Mobile: ${o.mobile}</span>
+                  </div>
+                  
+                  <div style="display:flex; gap:10px;">
+                      <div style="text-align:center; padding:5px 10px; background:#e3f2fd; border-radius:5px;">
+                          <small>📦 Total</small><br><b>${totalQty}</b>
+                      </div>
+                      <div style="text-align:center; padding:5px 10px; background:#e8f5e9; border-radius:5px; color:#2e7d32;">
+                          <small>✅ Delivered</small><br><b>${deliveredQty}</b>
+                      </div>
+                      <div style="text-align:center; padding:5px 10px; background:#ffebee; border-radius:5px; color:#c62828; border:1px solid red;">
+                          <small>⏳ Pending</small><br><b>${pendingQty}</b>
+                      </div>
+                  </div>
               </div>
               ${boxesHtml}
           `;
