@@ -287,14 +287,14 @@
     </div>
 
     <div id="splitTab" class="tab-content">
-        <h2>📅 Split Delivery & Quantity Manager</h2>
+        <h2>📅 Split Delivery, Quantity & Time Manager</h2>
         <div class="form-row filter-controls-screen" style="background:#fce4ec; padding:15px; border-radius:8px; border:1px solid #f8bbd0;">
             <div class="form-group">
                 <label>Search Order / Customer</label>
                 <input type="text" id="splitSearchInput" placeholder="Name or Order No..." oninput="window.renderSplitManager()">
             </div>
         </div>
-        <p style="font-size:12px; color:#555;">Use this to split a large box group into smaller deliveries on different dates.</p>
+        <p style="font-size:12px; color:#555;">Use this to split a large box group, update dates/times, or delete extra boxes.</p>
         <div id="splitResultsContainer" style="margin-top:20px;"></div>
     </div>
 
@@ -789,7 +789,7 @@
   const genId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
 
   window.formatAMPM = (time) => {
-      if (!time) return '--';
+      if (!time) return '';
       let [hours, minutes] = time.split(':');
       hours = parseInt(hours);
       const ampm = hours >= 12 ? 'PM' : 'AM';
@@ -1076,7 +1076,7 @@
       }
   });
 
-  // --- UPDATED: SPLIT DELIVERY & QUANTITY MANAGER LOGIC ---
+  // --- UPDATED: SPLIT DELIVERY, QUANTITY & TIME MANAGER ---
   window.renderSplitManager = () => {
       const q = document.getElementById('splitSearchInput').value.toLowerCase();
       const container = document.getElementById('splitResultsContainer');
@@ -1102,11 +1102,10 @@
               <table style="width:100%; font-size:13px; margin-top:10px; border-collapse:collapse;">
                   <thead style="background:#f0f0f0;">
                       <tr>
-                          <th style="padding:5px; text-align:left;">Box Name</th>
-                          <th style="padding:5px; text-align:left;">Qty Available</th>
-                          <th style="padding:5px; text-align:left;">Current Date</th>
-                          <th style="padding:5px; text-align:left; border-left:2px solid #ddd; padding-left:10px;">Move Qty</th>
-                          <th style="padding:5px; text-align:left;">To New Date</th>
+                          <th style="padding:5px; text-align:left;">Box / Qty</th>
+                          <th style="padding:5px; text-align:left;">Current Date/Time (Edit)</th>
+                          <th style="padding:5px; text-align:left; border-left:2px solid #ddd; padding-left:10px;">Split Qty</th>
+                          <th style="padding:5px; text-align:left;">New Date/Time</th>
                           <th style="padding:5px;">Action</th>
                       </tr>
                   </thead>
@@ -1115,25 +1114,37 @@
 
           o.boxGroups.forEach((bg, index) => {
               const effectiveDate = bg.groupDelDate || o.delDate;
-              const dateDisplay = effectiveDate === o.delDate ? `${window.formatDate(effectiveDate)} (Main)` : `<span style="color:#c2185b; font-weight:bold;">${window.formatDate(effectiveDate)}</span>`;
+              const effectiveTime = bg.groupDelTime || ''; // Specific box time
               
               const qtyInputId = `qty-split-${o.id}-${index}`;
-              const dateInputId = `date-split-${o.id}-${index}`;
+              const splitDateInputId = `date-split-${o.id}-${index}`;
+              const splitTimeInputId = `time-split-${o.id}-${index}`;
+              
+              const updateDateInputId = `date-update-${o.id}-${index}`;
+              const updateTimeInputId = `time-update-${o.id}-${index}`;
 
               boxesHtml += `
                   <tr>
-                      <td style="padding:8px; border-bottom:1px solid #eee;">${bg.groupName}</td>
-                      <td style="padding:8px; border-bottom:1px solid #eee; font-weight:bold;">${bg.groupQty}</td>
-                      <td style="padding:8px; border-bottom:1px solid #eee;">${dateDisplay}</td>
+                      <td style="padding:8px; border-bottom:1px solid #eee;">
+                          <b>${bg.groupName}</b><br>
+                          <span style="font-size:14px; color:#d35400;">Qty: ${bg.groupQty}</span>
+                      </td>
+                      <td style="padding:8px; border-bottom:1px solid #eee;">
+                          <input type="date" id="${updateDateInputId}" value="${effectiveDate}" style="width:100px; font-size:11px;">
+                          <input type="time" id="${updateTimeInputId}" value="${effectiveTime}" style="width:80px; font-size:11px;">
+                          <button class="btn btn-sm btn-primary" onclick="window.updateSplitDate('${o.id}', ${index}, '${updateDateInputId}', '${updateTimeInputId}')">Update</button>
+                      </td>
                       
                       <td style="padding:8px; border-bottom:1px solid #eee; border-left:2px solid #ddd; padding-left:10px;">
-                          <input type="number" id="${qtyInputId}" placeholder="Qty" style="width:60px; padding:5px;" max="${bg.groupQty}">
+                          <input type="number" id="${qtyInputId}" placeholder="Qty" style="width:50px; padding:5px;" max="${bg.groupQty}">
                       </td>
                       <td style="padding:8px; border-bottom:1px solid #eee;">
-                          <input type="date" id="${dateInputId}" style="width:110px; padding:5px;">
+                          <input type="date" id="${splitDateInputId}" style="width:100px; padding:5px; font-size:11px;">
+                          <input type="time" id="${splitTimeInputId}" style="width:80px; padding:5px; font-size:11px;">
                       </td>
                       <td style="padding:8px; border-bottom:1px solid #eee;">
-                          <button class="btn btn-sm btn-primary" onclick="window.splitOrderGroup('${o.id}', ${index}, '${qtyInputId}', '${dateInputId}')">Separate/Split</button>
+                          <button class="btn btn-sm btn-warning" onclick="window.splitOrderGroup('${o.id}', ${index}, '${qtyInputId}', '${splitDateInputId}', '${splitTimeInputId}')">Split</button>
+                          <button class="btn btn-sm btn-danger" onclick="window.deleteSplitGroup('${o.id}', ${index})">❌</button>
                       </td>
                   </tr>
               `;
@@ -1151,10 +1162,63 @@
       });
   }
 
-  // --- LOGIC TO SPLIT BOX QUANTITY ---
-  window.splitOrderGroup = async (orderId, groupIndex, qtyId, dateId) => {
+  // --- LOGIC: UPDATE DATE & TIME ONLY ---
+  window.updateSplitDate = async (orderId, groupIndex, dateInputId, timeInputId) => {
+      const newDate = document.getElementById(dateInputId).value;
+      const newTime = document.getElementById(timeInputId).value;
+      
+      if(!newDate) return alert("Select a valid date.");
+      
+      const order = globalOrders.find(o => o.id === orderId);
+      if(!order) return;
+      
+      const updatedBoxGroups = [...order.boxGroups];
+      updatedBoxGroups[groupIndex].groupDelDate = newDate;
+      updatedBoxGroups[groupIndex].groupDelTime = newTime; // Save time
+
+      try {
+          await updateDoc(doc(db, "orders", orderId), { boxGroups: updatedBoxGroups });
+          alert("✅ Date & Time Updated!");
+          window.renderSplitManager();
+      } catch(err) { alert("Error: " + err.message); }
+  }
+
+  // --- LOGIC: DELETE SPLIT GROUP ---
+  window.deleteSplitGroup = async (orderId, groupIndex) => {
+      if(!confirm("⚠️ Are you sure you want to DELETE this box group?\n\nThis will remove the items and Reduce the Total Bill Amount.")) return;
+      
+      const order = globalOrders.find(o => o.id === orderId);
+      if(!order) return;
+
+      const updatedBoxGroups = [...order.boxGroups];
+      updatedBoxGroups.splice(groupIndex, 1);
+
+      // Recalculate Totals
+      let newSubTotal = 0;
+      updatedBoxGroups.forEach(g => {
+          let gCost = 0;
+          g.items.forEach(i => gCost += (parseFloat(i.qty||0) * parseFloat(i.rate||0)));
+          newSubTotal += (gCost * parseFloat(g.groupQty||0));
+      });
+      
+      const newTotal = newSubTotal - (parseFloat(order.discount)||0);
+
+      try {
+          await updateDoc(doc(db, "orders", orderId), { 
+              boxGroups: updatedBoxGroups,
+              subTotal: newSubTotal,
+              total: newTotal
+          });
+          alert("✅ Group Deleted. Bill Total updated.");
+          window.renderSplitManager();
+      } catch(err) { alert("Error: " + err.message); }
+  }
+
+  // --- LOGIC TO SPLIT BOX QUANTITY (WITH TIME) ---
+  window.splitOrderGroup = async (orderId, groupIndex, qtyId, dateId, timeId) => {
       const splitQty = parseFloat(document.getElementById(qtyId).value);
       const splitDate = document.getElementById(dateId).value;
+      const splitTime = document.getElementById(timeId).value;
       
       if(!splitQty || splitQty <= 0) return alert("Please enter valid Quantity to move.");
       if(!splitDate) return alert("Please select a New Date.");
@@ -1168,25 +1232,22 @@
 
       if(splitQty > currentQty) return alert(`Cannot move ${splitQty}. Only ${currentQty} available.`);
       
-      // If moving everything, just update the date
       if(splitQty === currentQty) {
           if(confirm("Moving ALL items to new date?")) {
               targetGroup.groupDelDate = splitDate;
+              targetGroup.groupDelTime = splitTime;
           } else return;
       } else {
-          // SPLIT LOGIC:
-          // 1. Reduce quantity of original group
+          // SPLIT LOGIC
           targetGroup.groupQty = currentQty - splitQty;
           
-          // 2. Create NEW group with split quantity and new date
           const newGroup = {
               groupName: targetGroup.groupName,
               groupQty: splitQty,
               groupDelDate: splitDate,
-              items: [...targetGroup.items] // Copy items
+              groupDelTime: splitTime,
+              items: [...targetGroup.items]
           };
-          
-          // 3. Add to array
           updatedBoxGroups.push(newGroup);
       }
 
@@ -1195,7 +1256,7 @@
               boxGroups: updatedBoxGroups
           });
           alert("✅ Order Split Successfully!");
-          window.renderSplitManager(); // Refresh view
+          window.renderSplitManager(); 
       } catch(err) {
           alert("Error updating: " + err.message);
       }
@@ -1242,7 +1303,7 @@
       }
   }
 
-  // --- PACKING RENDER ---
+  // --- PACKING RENDER (Shows Time) ---
   window.renderPacking = () => {
       const date = document.getElementById('packDateFilter').value;
       const search = document.getElementById('packSearchFilter').value.toLowerCase();
@@ -1266,9 +1327,13 @@
               if(effectiveDate === date) {
                   boxGroupsForToday++;
                   let itemsList = bg.items.map(i => `${i.name} (${i.qty}) ${i.remark ? '<span style="color:red">['+i.remark+']</span>':''}`).join(', ');
+                  
+                  // Show specific time if exists
+                  const timeDisplay = bg.groupDelTime ? ` <span style="color:#d35400; font-weight:bold; background:#fff3e0; padding:2px; border-radius:4px;">(@ ${window.formatAMPM(bg.groupDelTime)})</span>` : '';
+                  
                   detailsHtml += `<div style="border-bottom:1px dashed #ccc; padding:3px 0;">
-                                    <span style="font-weight:bold; color:#d35400;">${bg.groupQty} x ${bg.groupName}</span>
-                                    <br><span style="font-size:11px;">${itemsList}</span>
+                                    <span style="font-weight:bold; color:#000;">${bg.groupQty} x ${bg.groupName}</span>${timeDisplay}
+                                    <br><span style="font-size:11px; color:#555;">${itemsList}</span>
                                   </div>`;
               }
           });
